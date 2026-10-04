@@ -1,6 +1,6 @@
 :root {
 	--hue-base: 30;
-	--sat-base: 0;
+	--sat-base: 0%;
 	--sat-primary: 60%;
 
 	--l-bg: 98%;
@@ -121,7 +121,7 @@ button:disabled {
 	cursor: not-allowed;
 }
 
-button:focus-visible, input:focus-visible, select:focus-visible, [contenteditable='true']:focus-visible, .script-block[tabindex="0"]:focus-visible, textarea:focus-visible {
+button:focus-visible, input:focus-visible, select:focus-visible, [contenteditable='true']:focus-visible, .script-block[tabindex='0']:focus-visible, textarea:focus-visible {
 	outline: 2px solid var(--color-primary);
 	outline-offset: 2px;
 }
@@ -151,7 +151,7 @@ label {
 	opacity: 0.7;
 }
 
-input[type="text"], select {
+input[type='text'], select {
 	background-color: var(--color-bg);
 	color: var(--color-text);
 	border: 1px solid var(--color-border);
@@ -215,7 +215,7 @@ main {
 	position: relative;
 }
 
-.script-block:focus-within, .script-block[tabindex="0"]:focus {
+.script-block:focus-within, .script-block[tabindex='0']:focus {
 	background-color: var(--color-highlight);
 }
 
@@ -330,7 +330,6 @@ main {
 	opacity: 0.8;
 }
 
-/* Overlays & Modals */
 .fullscreen-overlay {
 	position: fixed;
 	top: 0; left: 0; right: 0; bottom: 0;
@@ -368,7 +367,6 @@ main {
 	transition: width 0.1s linear;
 }
 
-/* Popup (Modal) Styles */
 .modal-content {
 	background-color: var(--color-surface);
 	color: var(--color-text);
