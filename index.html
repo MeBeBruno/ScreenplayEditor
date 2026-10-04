@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Screenplay Editor</title>
+    <link rel="stylesheet" href="styles.css">
+	<script src="https://manuels.github.io/texlive.js/texlive.js"></script>
+</head>
+<body>
+	<header>
+		<div class="header-info">
+			<h1>Screenplay Editor</h1>
+		</div>
+		<div class="export-actions">
+			<button id="show-tex-btn" class="secondary">View Code</button>
+			<button id="export-pdf-btn" class="primary">Make PDF</button>
+		</div>
+	</header>
+
+	<section id="config-panel" aria-label="Script metadata">
+		<div class="input-group">
+			<label for="script-title">Title</label>
+			<input type="text" id="script-title" placeholder="Forrest Gump…" />
+		</div>
+		<div class="input-group">
+			<label for="script-author">Author</label>
+			<input type="text" id="script-author" placeholder="Robert Zemeckis…">
+		</div>
+	</section>
+	
+	<nav id="editor-toolbar" aria-label="Block settings">
+		<div class="toolbar-primary">
+			<div class="input-group">
+				<label for="block-type-selector">Current block</label>
+				<select id="block-type-selector">
+					<option value="scene_heading">Scene Heading</option>
+					<option value="action">Action</option>
+					<option value="character">Character</option>
+					<option value="parenthetical">Additional dialogue description</option>
+					<option value="dialogue">Dialogue</option>
+					<option value="transition">Transition</option>
+				</select>
+			</div>
+		</div>
+		<div class="toolbar-context" id="context-controls">
+		</div>
+	</nav>
+
+	<main id="editor-container" aria-label="Editor">
+	</main>
+
+	<!-- Compiler Overlay -->
+	<div id="compiler-overlay" class="fullscreen-overlay hidden">
+		<div class="progress-container">
+			<div id="progress-bar" class="progress-bar"></div>
+		</div>
+		<h2 id="compiler-status">Initialize engine…</h2>
+		<p>WebAssembly parses LaTeX-commands natively…</p>
+	</div>
+
+	<!-- TeX Code Popup (Modal) -->
+	<div id="tex-modal" class="fullscreen-overlay hidden">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2>LaTeX Source Code</h2>
+				<button id="close-modal-btn" class="secondary" style="padding: var(--space-xs) var(--space-sm);">X</button>
+			</div>
+			<textarea id="tex-code-area" readonly spellcheck="false"></textarea>
+			<div class="modal-footer">
+				<button id="copy-tex-btn" class="primary">Copy</button>
+				<button id="download-tex-btn" class="secondary">Download as Tex-File</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="app.js"></script>
+</body>
+</html>
