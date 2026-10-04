@@ -121,7 +121,7 @@ button:disabled {
 	cursor: not-allowed;
 }
 
-button:focus-visible, input:focus-visible, select:focus-visible, [contenteditable='true']:focus-visible, .script-block[tabindex='0']:focus-visible, textarea:focus-visible {
+button:focus-visible, input:focus-visible, select:focus-visible, [contenteditable='true']:focus-visible, .script-block[tabindex='0']:focus-visible {
 	outline: 2px solid var(--color-primary);
 	outline-offset: 2px;
 }
@@ -365,51 +365,4 @@ main {
 	height: 100%;
 	background-color: var(--color-primary);
 	transition: width 0.1s linear;
-}
-
-.modal-content {
-	background-color: var(--color-surface);
-	color: var(--color-text);
-	padding: var(--space-lg);
-	border-radius: var(--radius-md);
-	width: 90%;
-	max-width: 50rem;
-	max-height: 90vh;
-	display: flex;
-	flex-direction: column;
-	gap: var(--space-md);
-	box-shadow: 0 10px 15px -3px oklch(0 0 0 / 0.1);
-}
-
-.modal-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.modal-header h2 {
-	margin: 0;
-	font-size: 1.25rem;
-}
-
-#tex-code-area {
-	width: 100%;
-	flex: 1;
-	min-height: 20rem;
-	font-family: var(--font-mono);
-	font-size: 0.875rem;
-	padding: var(--space-sm);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius-sm);
-	background-color: var(--color-bg);
-	color: var(--color-text);
-	resize: vertical;
-	white-space: pre;
-	overflow-x: auto;
-}
-
-.modal-footer {
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--space-sm);
 }
