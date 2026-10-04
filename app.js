@@ -1,4 +1,4 @@
-const LATEX_CONFIG = {
+const CONFIG = {
 	prefixes: [
 		{ val: 'INT', label: 'Interior' },
 		{ val: 'EXT', label: 'Exterior' },
@@ -84,8 +84,7 @@ function getEditableNode(block) {
 	if (block.getAttribute('contenteditable') === 'true') {
 		return block;
 	}
-	const editable = block.querySelector('.editable-node');
-	return editable || block;
+	return block.querySelector('.editable-node') || block;
 }
 
 function getBlockText(block) {
@@ -143,25 +142,25 @@ function renderContextControls(block) {
 	const type = block.getAttribute('data-type');
 
 	if (type === 'scene_heading') {
-		const prefixSelect = createSelectElement(LATEX_CONFIG.prefixes, block.getAttribute('data-prefix'), function(newVal) {
+		const prefixSelect = createSelectElement(CONFIG.prefixes, block.getAttribute('data-prefix'), function(newVal) {
 			block.setAttribute('data-prefix', newVal);
 			block.querySelector('.sh-prefix').textContent = newVal + '. ';
 		});
-		const timeSelect = createSelectElement(LATEX_CONFIG.times, block.getAttribute('data-time'), function(newVal) {
+		const timeSelect = createSelectElement(CONFIG.times, block.getAttribute('data-time'), function(newVal) {
 			block.setAttribute('data-time', newVal);
 			block.querySelector('.sh-time').textContent = ' - ' + newVal;
 		});
 		container.appendChild(createFormGroup('Ort Prefix', prefixSelect));
 		container.appendChild(createFormGroup('Daytime', timeSelect));
 	} else if (type === 'character') {
-		const extSelect = createSelectElement(LATEX_CONFIG.extensions, block.getAttribute('data-extension'), function(newVal) {
+		const extSelect = createSelectElement(CONFIG.extensions, block.getAttribute('data-extension'), function(newVal) {
 			block.setAttribute('data-extension', newVal);
 			const formatted = newVal ? ' (' + newVal + ')' : '';
 			block.querySelector('.char-ext').textContent = formatted;
 		});
 		container.appendChild(createFormGroup('Way of talking', extSelect));
 	} else if (type === 'transition') {
-		const transSelect = createSelectElement(LATEX_CONFIG.transitions, block.getAttribute('data-transition'), function(newVal) {
+		const transSelect = createSelectElement(CONFIG.transitions, block.getAttribute('data-transition'), function(newVal) {
 			block.setAttribute('data-transition', newVal);
 			block.textContent = newVal;
 		});
@@ -181,7 +180,6 @@ function buildBlockDOM(type, initialText = '') {
 	const addBtn = document.createElement('button');
 	addBtn.className = 'action-btn';
 	addBtn.textContent = '+';
-	addBtn.title = 'Append new block';
 	addBtn.addEventListener('mousedown', function(e) {
 		e.preventDefault();
 		insertLogicalBlockAfter(block);
@@ -190,7 +188,6 @@ function buildBlockDOM(type, initialText = '') {
 	const delBtn = document.createElement('button');
 	delBtn.className = 'action-btn del-btn';
 	delBtn.textContent = '−';
-	delBtn.title = 'Delete block';
 	delBtn.addEventListener('mousedown', function(e) {
 		e.preventDefault();
 		deleteBlock(block);
@@ -201,13 +198,13 @@ function buildBlockDOM(type, initialText = '') {
 	block.appendChild(actions);
 
 	if (type === 'scene_heading') {
-		block.setAttribute('data-prefix', LATEX_CONFIG.prefixes[0].val);
-		block.setAttribute('data-time', LATEX_CONFIG.times[0].val);
+		block.setAttribute('data-prefix', CONFIG.prefixes[0].val);
+		block.setAttribute('data-time', CONFIG.times[0].val);
 
 		const prefixNode = document.createElement('span');
 		prefixNode.className = 'sh-prefix static-text';
 		prefixNode.setAttribute('contenteditable', 'false');
-		prefixNode.textContent = LATEX_CONFIG.prefixes[0].val + '. ';
+		prefixNode.textContent = CONFIG.prefixes[0].val + '. ';
 
 		const locationNode = document.createElement('span');
 		locationNode.className = 'sh-location editable-node';
@@ -218,13 +215,13 @@ function buildBlockDOM(type, initialText = '') {
 		const timeNode = document.createElement('span');
 		timeNode.className = 'sh-time static-text';
 		timeNode.setAttribute('contenteditable', 'false');
-		timeNode.textContent = ' - ' + LATEX_CONFIG.times[0].val;
+		timeNode.textContent = ' - ' + CONFIG.times[0].val;
 
 		block.appendChild(prefixNode);
 		block.appendChild(locationNode);
 		block.appendChild(timeNode);
 	} else if (type === 'character') {
-		block.setAttribute('data-extension', LATEX_CONFIG.extensions[0].val);
+		block.setAttribute('data-extension', CONFIG.extensions[0].val);
 
 		const nameNode = document.createElement('span');
 		nameNode.className = 'char-name editable-node';
@@ -262,10 +259,10 @@ function buildBlockDOM(type, initialText = '') {
 	} else if (type === 'transition') {
 		block.setAttribute('contenteditable', 'false');
 		block.setAttribute('tabindex', '0');
-		block.setAttribute('data-transition', LATEX_CONFIG.transitions[0].val);
+		block.setAttribute('data-transition', CONFIG.transitions[0].val);
 		
 		const transText = document.createElement('span');
-		transText.textContent = LATEX_CONFIG.transitions[0].val;
+		transText.textContent = CONFIG.transitions[0].val;
 		block.appendChild(transText);
 	} else {
 		const textNode = document.createElement('span');
@@ -452,193 +449,131 @@ function bindBlockEvents(block) {
 	}
 }
 
-function escapeLatexChars(str) {
-	return str.replace(/([&%$#_{}])/g, '\\$1').replace(/~/g, '\\textasciitilde{}').replace(/\^/g, '\\textasciicircum{}');
-}
-
-function generateLaTeXString() {
-	const titleRaw = document.getElementById('script-title').value || 'UNTITLED SCRIPT';
-	const authorRaw = document.getElementById('script-author').value || 'UNKNOWN AUTHOR';
-	
-	const title = escapeLatexChars(titleRaw);
-	const author = escapeLatexChars(authorRaw);
-
-	let tex = '\\documentclass[12pt]{screenplay}\n\n';
-	tex += '\\title{' + title + '}\n';
-	tex += '\\author{' + author + '}\n\n';
-	tex += '\\begin{document}\n';
-	tex += '\\coverpage\n\n';
-
-	const blocks = document.querySelectorAll('.script-block');
-	let inDialogue = false;
-
-	blocks.forEach(function(block) {
-		const type = block.getAttribute('data-type');
-		
-		if (inDialogue && type !== 'dialogue' && type !== 'parenthetical') {
-			tex += '\\end{dialogue}\n\n';
-			inDialogue = false;
-		}
-
-		if (type === 'scene_heading') {
-			const prefix = block.getAttribute('data-prefix');
-			const loc = escapeLatexChars(block.querySelector('.sh-location').textContent.trim());
-			const time = escapeLatexChars(block.getAttribute('data-time'));
-			
-			if (prefix === 'INT') {
-				tex += '\\int{' + loc + '}{' + time + '}\n\n';
-			} else if (prefix === 'EXT') {
-				tex += '\\ext{' + loc + '}{' + time + '}\n\n';
-			} else {
-				tex += '\\intext{' + loc + '}{' + time + '}\n\n'; 
-			}
-		} 
-		else if (type === 'action') {
-			const text = escapeLatexChars(getBlockText(block).trim());
-			if (text) {
-				tex += text + '\n\n';
-			}
-		}
-		else if (type === 'character') {
-			const name = escapeLatexChars(block.querySelector('.char-name').textContent.trim());
-			const ext = escapeLatexChars(block.getAttribute('data-extension'));
-			if (ext) {
-				tex += '\\begin{dialogue}[' + ext + ']{' + name + '}\n';
-			} else {
-				tex += '\\begin{dialogue}{' + name + '}\n';
-			}
-			inDialogue = true;
-		}
-		else if (type === 'parenthetical') {
-			const text = escapeLatexChars(block.querySelector('.paren-text').textContent.trim());
-			if (text) {
-				tex += '\\paren{' + text + '}\n';
-			}
-		}
-		else if (type === 'dialogue') {
-			const text = escapeLatexChars(getBlockText(block).trim());
-			if (text) {
-				tex += text + '\n';
-			}
-		}
-		else if (type === 'transition') {
-			const text = escapeLatexChars(block.getAttribute('data-transition'));
-			if (text.includes('FADE IN')) {
-				tex += '\\fadein\n\n';
-			} else if (text.includes('FADE OUT')) {
-				tex += '\\fadeout\n\n';
-			} else {
-				tex += '\\begin{flushright}\n' + text + '\n\\end{flushright}\n\n';
-			}
-		}
-	});
-
-	if (inDialogue) {
-		tex += '\\end{dialogue}\n\n';
-	}
-	tex += '\\end{document}\n';
-	return tex;
-}
-
-function showTexModal() {
-	const texString = generateLaTeXString();
-	const textarea = document.getElementById('tex-code-area');
-	textarea.value = texString;
-	document.getElementById('tex-modal').classList.remove('hidden');
-	textarea.scrollTop = 0;
-}
-
-function closeTexModal() {
-	document.getElementById('tex-modal').classList.add('hidden');
-}
-
-function copyTexCode() {
-	const textarea = document.getElementById('tex-code-area');
-	textarea.select();
-	navigator.clipboard.writeText(textarea.value).then(function() {
-		const btn = document.getElementById('copy-tex-btn');
-		const originalText = btn.textContent;
-		btn.textContent = 'Copied!';
-		setTimeout(function() {
-			btn.textContent = originalText;
-		}, 2000);
-	}).catch(function(err) {
-		console.error('Copy error: ', err);
-	});
-}
-
-function exportRawLaTeX() {
-	const tex = document.getElementById('tex-code-area').value || generateLaTeXString();
-	const blob = new Blob([tex], { type: 'text/plain;charset=utf-8' });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = 'script.tex';
-	a.click();
-	URL.revokeObjectURL(url);
-}
-
-async function compilePDF() {
+function compileNativePDF() {
 	if (state.isCompiling) {
 		return;
 	}
-	
 	state.isCompiling = true;
-	const overlay = document.getElementById('compiler-overlay');
-	const statusText = document.getElementById('compiler-status');
-	const progressBar = document.getElementById('progress-bar');
 	
+	const overlay = document.getElementById('compiler-overlay');
+	const progressBar = document.getElementById('progress-bar');
 	overlay.classList.remove('hidden');
 	progressBar.style.width = '10%';
 	
-	try {
-		statusText.textContent = 'Loading official screenplay.cls from CTAN...';
-		const clsResponse = await fetch('https://mirrors.ctan.org/macros/latex/contrib/screenplay/screenplay.cls');
-		if (!clsResponse.ok) {
-			throw new Error('CTAN-Server for screenplay.cls is unreachable.');
+	setTimeout(function() {
+		try {
+			const { jsPDF } = window.jspdf;
+			const doc = new jsPDF({ orientation: 'p', unit: 'in', format: 'letter' });
+			
+			doc.setFont('courier', 'normal');
+			doc.setFontSize(12);
+			
+			const LINES_PER_PAGE = 54;
+			let currentLine = 0;
+			let pageNum = 0;
+			
+			function addPage() {
+				doc.addPage();
+				pageNum++;
+				currentLine = 0;
+				if (pageNum > 1) {
+					doc.text(pageNum.toString() + '.', 7.5, 0.5, { align: 'right' });
+				}
+			}
+			
+			const title = document.getElementById('script-title').value.trim() || 'UNTITLED SCRIPT';
+			const author = document.getElementById('script-author').value.trim() || 'UNKNOWN AUTHOR';
+			
+			doc.text(title.toUpperCase(), 4.25, 4.5, { align: 'center' });
+			doc.text('written by', 4.25, 5.0, { align: 'center' });
+			doc.text(author, 4.25, 5.5, { align: 'center' });
+			
+			addPage();
+			
+			const blocks = document.querySelectorAll('.script-block');
+			let prevType = null;
+			
+			blocks.forEach(function(block) {
+				const type = block.getAttribute('data-type');
+				let text = '';
+				let leftMargin = 1.5;
+				let maxWidth = 6.0;
+				let spacesBefore = 1;
+				
+				if (type === 'scene_heading') {
+					const prefix = block.getAttribute('data-prefix');
+					const loc = block.querySelector('.sh-location').textContent.trim();
+					const time = block.getAttribute('data-time');
+					text = (prefix + '. ' + loc + ' - ' + time).toUpperCase();
+					spacesBefore = prevType === null ? 0 : 2;
+				} else if (type === 'action') {
+					text = getBlockText(block).trim();
+					spacesBefore = prevType === null ? 0 : 2;
+				} else if (type === 'character') {
+					const name = block.querySelector('.char-name').textContent.trim().toUpperCase();
+					const ext = block.getAttribute('data-extension');
+					text = ext ? name + ' (' + ext + ')' : name;
+					leftMargin = 3.7;
+					maxWidth = 4.0;
+					spacesBefore = 2;
+				} else if (type === 'parenthetical') {
+					const inner = block.querySelector('.paren-text').textContent.trim();
+					text = '(' + inner + ')';
+					leftMargin = 3.1;
+					maxWidth = 2.0;
+					spacesBefore = 1;
+				} else if (type === 'dialogue') {
+					text = getBlockText(block).trim();
+					leftMargin = 2.5;
+					maxWidth = 3.5;
+					spacesBefore = 1;
+				} else if (type === 'transition') {
+					text = block.getAttribute('data-transition').toUpperCase();
+					leftMargin = 5.5;
+					maxWidth = 2.0;
+					spacesBefore = 2;
+				}
+				
+				if (text === '') {
+					return;
+				}
+				
+				const lines = doc.splitTextToSize(text, maxWidth);
+				let linesNeeded = lines.length;
+				
+				if (type === 'character') {
+					linesNeeded += 2;
+				}
+				
+				if (currentLine + spacesBefore + linesNeeded > LINES_PER_PAGE) {
+					addPage();
+					spacesBefore = 0;
+				}
+				
+				currentLine += spacesBefore;
+				
+				lines.forEach(function(line) {
+					const yPos = 1.0 + (currentLine * (1/6));
+					doc.text(line, leftMargin, yPos);
+					currentLine++;
+				});
+				
+				prevType = type;
+			});
+			
+			progressBar.style.width = '100%';
+			doc.save('script.pdf');
+			
+		} catch (error) {
+			alert('Fehler bei der PDF-Generierung: ' + error.message);
+		} finally {
+			setTimeout(function() {
+				overlay.classList.add('hidden');
+				progressBar.style.width = '0%';
+				state.isCompiling = false;
+			}, 500);
 		}
-		const clsContent = await clsResponse.text();
-		progressBar.style.width = '40%';
-
-		statusText.textContent = 'Compiling via API...';
-		const scriptLatex = generateLaTeXString();
-		const fullCompileString = '\\begin{filecontents*}{screenplay.cls}\n' + clsContent + '\n\\end{filecontents*}\n' + scriptLatex;
-
-		const pdfResponse = await fetch('https://latexonline.cc/compile', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
-			},
-			body: 'text=' + encodeURIComponent(fullCompileString)
-		});
-
-		if (!pdfResponse.ok) {
-			throw new Error('API Compilation failed.');
-		}
-
-		progressBar.style.width = '80%';
-		const blob = await pdfResponse.blob();
-		const url = URL.createObjectURL(blob);
-		
-		progressBar.style.width = '100%';
-		
-		setTimeout(function() {
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = 'script.pdf';
-			a.click();
-			URL.revokeObjectURL(url);
-			overlay.classList.add('hidden');
-			progressBar.style.width = '0%';
-			state.isCompiling = false;
-		}, 500);
-
-	} catch (error) {
-		alert('Compilation error: ' + error.message);
-		overlay.classList.add('hidden');
-		progressBar.style.width = '0%';
-		state.isCompiling = false;
-	}
+	}, 100);
 }
 
 function initializeEditor() {
@@ -648,22 +583,11 @@ function initializeEditor() {
 	setCaretPosition(getEditableNode(initialBlock), 0);
 	updateActiveState(initialBlock);
 
-	document.getElementById('show-tex-btn').addEventListener('click', showTexModal);
-	document.getElementById('close-modal-btn').addEventListener('click', closeTexModal);
-	document.getElementById('copy-tex-btn').addEventListener('click', copyTexCode);
-	document.getElementById('download-tex-btn').addEventListener('click', exportRawLaTeX);
-	
-	document.getElementById('export-pdf-btn').addEventListener('click', compilePDF);
+	document.getElementById('export-pdf-btn').addEventListener('click', compileNativePDF);
 	
 	document.getElementById('block-type-selector').addEventListener('change', function(event) {
 		if (state.activeBlock && !event.target.options[event.target.selectedIndex].disabled) {
 			morphBlock(state.activeBlock, event.target.value);
-		}
-	});
-	
-	document.getElementById('tex-modal').addEventListener('click', function(e) {
-		if(e.target === this) {
-			closeTexModal();
 		}
 	});
 }
@@ -672,6 +596,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	try {
 		initializeEditor();
 	} catch (error) {
-		console.error('Core Architecture Failure:', error);
+		console.error(error);
 	}
 });
