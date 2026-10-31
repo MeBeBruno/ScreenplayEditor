@@ -3,215 +3,186 @@
 <head>
 	<meta charset='UTF-8'>
 	<meta name='viewport' content='width=device-width, initial-scale=1.0'>
-	<title>ScriptBridge — Drehbuch-Studio für Overleaf</title>
+	<title>ScriptBridge</title>
 	<link rel='stylesheet' href='./styles/design-tokens.css'>
-	<link rel='stylesheet' href='./styles/layout-and-components.css'>
+	<link rel='stylesheet' href='./styles/workspace-layout.css'>
 </head>
 <body>
-	<a class='skip-navigation-link' href='#main-workspace'>Direkt zum Arbeitsbereich springen</a>
+	<a class='skip-link' href='#main-content'>Zum Inhalt springen</a>
 
-	<header class='application-header' role='banner'>
-		<div class='header-brand-group'>
-			<button type='button' id='navigation-back-button' class='button-secondary button-hidden' aria-label='Zurück zur Dokumentenübersicht'>
-				<span aria-hidden='true'>←</span> Alle Drehbücher
+	<header class='top-bar' role='banner'>
+		<div class='top-bar-left'>
+			<button type='button' id='back-to-dashboard-button' class='ghost-button is-hidden' aria-label='Zurück zur Übersicht'>
+				← Alle Dokumente
 			</button>
-			<div class='brand-identity'>
-				<span class='brand-badge' aria-hidden='true'>🎬</span>
-				<span class='brand-title'>ScriptBridge</span>
-			</div>
-			<span id='save-status-indicator' class='save-status-badge' role='status' aria-live='polite'>Bereit</span>
+			<span id='brand-title-element' class='brand-title'>Drehbücher</span>
+			<span id='save-timestamp-indicator' class='save-indicator is-hidden' role='status' aria-live='polite'></span>
 		</div>
 
-		<div class='header-actions-group'>
-			<div id='editor-toolbar-actions' class='editor-toolbar-group button-hidden'>
-				<button type='button' id='copy-artificial-intelligence-prompt-button' class='button-secondary' title='Kopiert eine optimale Anweisung für ChatGPT oder Claude'>
-					KI-Prompt-Vorlage kopieren
+		<div class='top-bar-right'>
+			<div id='editor-actions-container' class='editor-actions is-hidden'>
+				<button type='button' id='open-ai-import-button' class='secondary-button'>
+					✨ KI-Szene einfügen
 				</button>
-				<button type='button' id='open-smart-import-button' class='button-secondary'>
-					KI-Text einfügen &amp; umwandeln
-				</button>
-				<button type='button' id='toggle-preview-drawer-button' class='button-secondary' aria-expanded='false' aria-controls='preview-drawer-panel'>
-					Manuskript- &amp; LaTeX-Vorschau
-				</button>
-				<button type='button' id='open-in-overleaf-button' class='button-primary'>
-					In Overleaf als PDF öffnen ↗
-				</button>
+
+				<div class='split-button-group'>
+					<button type='button' id='export-overleaf-button' class='primary-button split-main-button'>
+						Als PDF in Overleaf öffnen ↗
+					</button>
+					<button type='button' id='toggle-export-menu-button' class='primary-button split-trigger-button' aria-haspopup='true' aria-expanded='false' aria-label='Weitere Export-Optionen'>
+						▾
+					</button>
+					<div id='export-dropdown-menu' class='dropdown-menu is-hidden' role='menu'>
+						<button type='button' id='copy-latex-source-button' class='dropdown-item' role='menuitem'>
+							LaTeX-Code in Zwischenablage kopieren
+						</button>
+						<button type='button' id='download-tex-file-button' class='dropdown-item' role='menuitem'>
+							Als .tex-Datei herunterladen
+						</button>
+					</div>
+				</div>
 			</div>
 
-			<button type='button' id='theme-switcher-button' class='button-icon-only' aria-label='Farbschema wechseln'>
-				Darstellung
+			<button type='button' id='theme-toggle-button' class='icon-button' aria-label='Erscheinungsbild wechseln' title='Hell / Dunkel wechseln'>
+				◐
 			</button>
 		</div>
 	</header>
 
-	<main id='main-workspace' class='main-workspace' tabindex='-1'>
-		<section id='dashboard-view-section' class='dashboard-view' aria-labelledby='dashboard-heading'>
-			<div class='dashboard-control-bar'>
-				<div class='dashboard-heading-group'>
-					<h1 id='dashboard-heading' class='section-title'>Meine Drehbücher</h1>
-					<p class='section-subtitle'>Wähle ein Dokument aus oder erstelle ein neues Skript. Alle Änderungen werden sofort lokal gespeichert.</p>
+	<main id='main-content' class='workspace-container' tabindex='-1'>
+		<section id='dashboard-section' class='dashboard-section' aria-label='Dokumentenübersicht'>
+			<div class='dashboard-toolbar'>
+				<div class='search-box'>
+					<input type='search' id='search-documents-input' class='clean-input search-input' placeholder='Suchen...' aria-label='Drehbücher durchsuchen'>
 				</div>
 
-				<div class='dashboard-filter-controls'>
-					<div class='control-field-group'>
-						<label for='dashboard-search-input' class='field-label'>Suchen</label>
-						<input type='search' id='dashboard-search-input' class='text-input' placeholder='Titel oder Autor filtern...'>
-					</div>
+				<div class='sort-controls'>
+					<label for='sort-criterion-select' class='sort-label'>Sortierung:</label>
+					<select id='sort-criterion-select' class='clean-select'>
+						<option value='modificationTimestamp'>Zuletzt bearbeitet</option>
+						<option value='creationTimestamp'>Erstellungsdatum</option>
+						<option value='title'>Name</option>
+					</select>
+					<button type='button' id='sort-direction-button' class='secondary-button sort-direction-button' aria-label='Sortierreihenfolge umkehren' title='Absteigend / Aufsteigend umschalten'>
+						↓ Absteigend
+					</button>
 
-					<div class='control-field-group'>
-						<label for='dashboard-sort-field-select' class='field-label'>Sortieren nach</label>
-						<select id='dashboard-sort-field-select' class='select-input'>
-							<option value='modificationTimestamp'>Bearbeitungsdatum</option>
-							<option value='creationTimestamp'>Erstellungsdatum</option>
-							<option value='title'>Name</option>
-						</select>
-					</div>
-
-					<div class='control-field-group'>
-						<label for='dashboard-sort-direction-select' class='field-label'>Reihenfolge</label>
-						<select id='dashboard-sort-direction-select' class='select-input'>
-							<option value='descending'>Absteigend (Neueste / Z–A)</option>
-							<option value='ascending'>Aufsteigend (Älteste / A–Z)</option>
-						</select>
-					</div>
-
-					<div class='control-field-group backup-actions-group'>
-						<span class='field-label'>Datensicherung</span>
-						<div class='inline-button-row'>
-							<button type='button' id='export-backup-button' class='button-secondary'>Backup speichern</button>
-							<label for='import-backup-file-input' class='button-secondary file-upload-label' tabindex='0'>Backup laden</label>
-							<input type='file' id='import-backup-file-input' class='visually-hidden' accept='application/json'>
+					<div class='relative-menu-wrapper'>
+						<button type='button' id='toggle-backup-menu-button' class='icon-button' aria-haspopup='true' aria-expanded='false' aria-label='Datensicherung' title='Datensicherung'>
+							⋯
+						</button>
+						<div id='backup-dropdown-menu' class='dropdown-menu is-hidden' role='menu'>
+							<button type='button' id='export-json-backup-button' class='dropdown-item' role='menuitem'>
+								Alle Dokumente als Backup sichern (.json)
+							</button>
+							<label for='import-json-backup-input' class='dropdown-item file-label-item' role='menuitem' tabindex='0'>
+								Backup-Datei wiederherstellen (.json)
+							</label>
+							<input type='file' id='import-json-backup-input' class='visually-hidden' accept='application/json'>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<div id='document-grid-container' class='document-grid' role='list' aria-label='Drehbuch-Dokumente'></div>
+			<div id='documents-grid' class='documents-grid' role='list'></div>
 		</section>
 
-		<section id='editor-view-section' class='editor-view view-hidden' aria-labelledby='editor-document-title-input'>
-			<div class='editor-layout-grid'>
-				<div class='editor-main-column'>
-					<article class='metadata-card' aria-label='Drehbuch-Deckblatt und Rahmenoptionen'>
-						<div class='metadata-header-row'>
-							<div class='metadata-title-group'>
-								<label for='editor-document-title-input' class='field-label'>Drehbuch-Titel (Deckblatt)</label>
-								<input type='text' id='editor-document-title-input' class='title-large-input' placeholder='Unbetiteltes Drehbuch'>
-							</div>
-							<div id='editor-metrics-summary' class='metrics-pill-group' aria-live='polite'></div>
-						</div>
-
-						<div class='metadata-fields-grid'>
-							<div class='control-field-group'>
-								<label for='editor-document-author-input' class='field-label'>Autor / Autoren</label>
-								<input type='text' id='editor-document-author-input' class='text-input' placeholder='z. B. Max Mustermann &amp; KI-Co-Autor'>
-							</div>
-
-							<div class='control-field-group'>
-								<label for='editor-document-address-input' class='field-label'>Kontakt / Fassung (Deckblatt unten links)</label>
-								<input type='text' id='editor-document-address-input' class='text-input' placeholder='z. B. 1. Fassung — Kontakt: studio@beispiel.de'>
-							</div>
-						</div>
-
-						<div class='metadata-toggles-row' role='group' aria-label='Automatische Drehbuch-Rahmenelemente'>
-							<label class='checkbox-toggle-label'>
-								<input type='checkbox' id='editor-include-title-page-checkbox'>
-								<span>Normgerechtes Deckblatt erzeugen (<code>\maketitle</code>)</span>
-							</label>
-							<label class='checkbox-toggle-label'>
-								<input type='checkbox' id='editor-include-fade-in-checkbox'>
-								<span>Automatisch mit <strong>FADE IN:</strong> beginnen (<code>\fadein</code>)</span>
-							</label>
-							<label class='checkbox-toggle-label'>
-								<input type='checkbox' id='editor-include-fade-out-checkbox'>
-								<span>Automatisch mit <strong>FADE OUT.</strong> enden (<code>\fadeout</code>)</span>
-							</label>
-							<label class='checkbox-toggle-label'>
-								<input type='checkbox' id='editor-include-the-end-checkbox'>
-								<span>Abschluss <strong>THE END</strong> setzen (<code>\theend</code>)</span>
-							</label>
-						</div>
-					</article>
-
-					<div class='blocks-section-header'>
-						<h2 class='blocks-section-title'>Szenen &amp; Drehbuch-Blöcke</h2>
-						<p class='blocks-section-hint'>Wähle für jeden Baustein einfach die Art aus. Die LaTeX-Formatierung und Platzierung passieren vollautomatisch.</p>
+		<section id='editor-section' class='editor-section is-hidden' aria-label='Drehbuch-Editor'>
+			<div class='manuscript-paper'>
+				<header class='manuscript-header'>
+					<input type='text' id='document-title-input' class='manuscript-title-input' placeholder='Titel des Drehbuchs' aria-label='Titel des Drehbuchs'>
+					<div class='manuscript-author-row'>
+						<span class='author-prefix'>von</span>
+						<input type='text' id='document-author-input' class='manuscript-author-input' placeholder='Name des Autors' aria-label='Name des Autors'>
+						<button type='button' id='toggle-cover-options-button' class='subtle-text-button' aria-expanded='false' aria-controls='cover-options-drawer'>
+							Deckblatt &amp; Optionen ▾
+						</button>
 					</div>
 
-					<div id='blocks-list-container' class='blocks-list' role='list' aria-label='Drehbuch-Bausteine'></div>
-
-					<div class='bottom-add-block-bar' role='toolbar' aria-label='Neuen Baustein am Ende anhängen'>
-						<span class='add-bar-label'>Baustein anhängen:</span>
-						<button type='button' class='button-secondary' data-add-block-type='scene_heading'>+ Neue Szene (INT./EXT.)</button>
-						<button type='button' class='button-secondary' data-add-block-type='action'>+ Handlung (Action)</button>
-						<button type='button' class='button-secondary' data-add-block-type='dialogue'>+ Dialog (Figur spricht)</button>
-						<button type='button' class='button-secondary' data-add-block-type='transition'>+ Schnitt-Übergang</button>
-					</div>
-				</div>
-
-				<aside id='preview-drawer-panel' class='preview-drawer drawer-hidden' aria-label='Manuskript- und LaTeX-Vorschau'>
-					<div class='preview-drawer-header'>
-						<div class='preview-tab-group' role='tablist' aria-label='Vorschau-Modus'>
-							<button type='button' id='tab-button-manuscript' class='preview-tab-button tab-active' role='tab' aria-selected='true'>
-								Drehbuch-Ansicht
-							</button>
-							<button type='button' id='tab-button-latex' class='preview-tab-button' role='tab' aria-selected='false'>
-								LaTeX-Code (screenplay.cls)
-							</button>
+					<div id='cover-options-drawer' class='cover-options-drawer is-hidden'>
+						<div class='cover-option-field'>
+							<label for='document-address-input' class='subtle-label'>Kontakt / Fassung (unten links auf dem Deckblatt)</label>
+							<input type='text' id='document-address-input' class='clean-input' placeholder='z. B. Entwurf 1.0 — kontakt@studio.de'>
 						</div>
-						<div class='preview-actions-row'>
-							<button type='button' id='copy-latex-code-button' class='button-secondary'>LaTeX kopieren</button>
-							<button type='button' id='download-latex-file-button' class='button-secondary'>.tex herunterladen</button>
+						<div class='cover-checkbox-grid'>
+							<label class='clean-checkbox'>
+								<input type='checkbox' id='option-title-page-checkbox'>
+								<span> Eigenes Deckblatt voranstellen</span>
+							</label>
+							<label class='clean-checkbox'>
+								<input type='checkbox' id='option-fade-in-checkbox'>
+								<span> Mit „FADE IN:“ beginnen</span>
+							</label>
+							<label class='clean-checkbox'>
+								<input type='checkbox' id='option-fade-out-checkbox'>
+								<span> Mit „FADE OUT.“ abschließen</span>
+							</label>
+							<label class='clean-checkbox'>
+								<input type='checkbox' id='option-the-end-checkbox'>
+								<span> „THE END“ am Ende setzen</span>
+							</label>
 						</div>
 					</div>
+				</header>
 
-					<div id='manuscript-preview-container' class='manuscript-preview-sheet' role='tabpanel' aria-labelledby='tab-button-manuscript'></div>
-					<pre id='latex-source-preview-container' class='latex-code-preview view-hidden' role='tabpanel' aria-labelledby='tab-button-latex'></pre>
-				</aside>
+				<div id='manuscript-blocks-container' class='manuscript-blocks' role='list' aria-label='Drehbuch-Abschnitte'></div>
+
+				<footer class='manuscript-add-bar' role='toolbar' aria-label='Neuen Abschnitt hinzufügen'>
+					<span class='add-bar-hint'>Hinzufügen:</span>
+					<button type='button' class='add-pill-button' data-append-type='scene_heading'>+ Szene</button>
+					<button type='button' class='add-pill-button' data-append-type='action'>+ Handlung</button>
+					<button type='button' class='add-pill-button' data-append-type='dialogue'>+ Dialog</button>
+					<button type='button' class='add-pill-button' data-append-type='transition'>+ Übergang</button>
+				</footer>
 			</div>
 		</section>
 	</main>
 
-	<dialog id='smart-import-modal-dialog' class='modal-dialog' aria-labelledby='smart-import-modal-title'>
-		<div class='modal-content-card'>
-			<div class='modal-header'>
-				<h2 id='smart-import-modal-title' class='modal-title'>KI-Text automatisch in Blöcke umwandeln</h2>
-				<button type='button' id='close-smart-import-modal-button' class='button-icon-only' aria-label='Dialog schließen'>✕</button>
+	<dialog id='ai-import-dialog' class='clean-modal' aria-labelledby='ai-modal-heading'>
+		<div class='modal-box'>
+			<div class='modal-top'>
+				<h2 id='ai-modal-heading' class='modal-heading'>KI-Text einfügen</h2>
+				<button type='button' id='close-ai-modal-button' class='icon-button' aria-label='Schließen'>✕</button>
 			</div>
-			<p class='modal-description'>
-				Füge hier eine von ChatGPT, Claude oder Gemini geschriebene Szene ein. Das System erkennt Szenenüberschriften (<code>INT.</code> / <code>EXT.</code>), sprechende Figuren, Regieanweisungen in Klammern und Handlungsabsätze vollautomatisch.
+
+			<p class='modal-hint'>
+				Kopiere eine Szene aus ChatGPT, Claude oder Gemini hier hinein. Szenen, Figuren, Regieanweisungen und Dialoge werden automatisch in die richtigen Bausteine zerlegt.
 			</p>
-			<label for='smart-import-textarea' class='field-label'>Drehbuch-Rohtext aus der KI</label>
-			<textarea id='smart-import-textarea' class='smart-import-textarea' rows='12' placeholder='INT. KÜCHE - TAG&#10;&#10;Dampf steigt aus einer Kaffeetasse auf.&#10;&#10;MARIA (V.O.)&#10;(leise)&#10;Niemand wusste, was an diesem Morgen passieren würde.'></textarea>
-			<div class='modal-footer'>
-				<button type='button' id='cancel-smart-import-button' class='button-secondary'>Abbrechen</button>
-				<button type='button' id='confirm-smart-import-button' class='button-primary'>Als Blöcke ins Drehbuch übernehmen</button>
+
+			<div class='prompt-helper-banner'>
+				<span>Du willst der KI vorher sagen, wie sie schreiben soll?</span>
+				<button type='button' id='copy-ai-prompt-button' class='subtle-text-button'>
+					Optimale KI-Anweisung kopieren
+				</button>
+			</div>
+
+			<textarea id='ai-raw-text-input' class='clean-textarea' rows='10' placeholder='INT. BÜRO - TAG&#10;&#10;Der Regen prasselt gegen die Scheibe.&#10;&#10;DAVID&#10;(ruhig)&#10;Wir fangen noch einmal ganz von vorne an.' aria-label='Drehbuchtext aus der KI'></textarea>
+
+			<div class='modal-bottom'>
+				<button type='button' id='cancel-ai-modal-button' class='secondary-button'>Abbrechen</button>
+				<button type='button' id='confirm-ai-import-button' class='primary-button'>In Drehbuch umwandeln</button>
 			</div>
 		</div>
 	</dialog>
 
-	<datalist id='character-names-datalist'></datalist>
+	<datalist id='existing-characters-datalist'></datalist>
 
-	<datalist id='time-of-day-datalist'>
+	<datalist id='standard-times-datalist'>
 		<option value='DAY'></option>
 		<option value='NIGHT'></option>
 		<option value='CONTINUOUS'></option>
 		<option value='LATER'></option>
-		<option value='MORNING'></option>
-		<option value='EVENING'></option>
 		<option value='TAG'></option>
 		<option value='NACHT'></option>
-		<option value='FORTLAUFEND'></option>
-		<option value='SPÄTER'></option>
 	</datalist>
 
-	<form id='overleaf-submission-form' action='https://www.overleaf.com/docs' method='post' target='_blank' class='visually-hidden'>
-		<input type='hidden' name='snip_name' id='overleaf-snip-name-input' value='drehbuch.tex'>
-		<textarea name='snip' id='overleaf-snip-content-input'></textarea>
+	<form id='overleaf-bridge-form' action='https://www.overleaf.com/docs' method='post' target='_blank' class='visually-hidden'>
+		<input type='hidden' name='snip_name' id='overleaf-filename-input' value='drehbuch.tex'>
+		<textarea name='snip' id='overleaf-latex-input'></textarea>
 	</form>
 
-	<div id='notification-toast-region' class='notification-toast-region' role='status' aria-live='polite'></div>
+	<div id='toast-container' class='toast-container' role='status' aria-live='polite'></div>
 
-	<script type='module' src='./scripts/application-controller.js'></script>
+	<script type='module' src='./scripts/interface-controller.js'></script>
 </body>
 </html>
