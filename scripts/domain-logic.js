@@ -1,100 +1,100 @@
-export function validateNonEmptyText(inputValue, fieldLabel) {
+export function validateNonEmptyText(inputValue, fieldName) {
 	if (typeof inputValue !== 'string' || inputValue.trim().length === 0) {
-		throw new Error('Ungueltiger Textwert fuer: ' + String(fieldLabel));
+		throw new Error('Ungueltiger Textwert fuer Feld: ' + String(fieldName));
 	}
 	return inputValue;
 }
 
-export function validateDocumentStructure(documentRecord) {
+export function validateScreenplayDocument(documentRecord) {
 	if (typeof documentRecord !== 'object' || documentRecord === null) {
-		throw new Error('Dokument ist kein gueltiges Objekt.');
+		throw new Error('Dokument-Datensatz ist kein Objekt.');
 	}
 	validateNonEmptyText(documentRecord.identifier, 'identifier');
 	validateNonEmptyText(documentRecord.creationTimestamp, 'creationTimestamp');
 	validateNonEmptyText(documentRecord.modificationTimestamp, 'modificationTimestamp');
 	if (!Array.isArray(documentRecord.blocks)) {
-		throw new Error('Dokument enthaelt keine gueltige Block-Liste.');
+		throw new Error('Dokument enthaelt keine gueltige Blockliste.');
 	}
 	return documentRecord;
 }
 
-export function countSceneHeadingsInDocument(documentRecord) {
-	validateDocumentStructure(documentRecord);
-	let totalScenes = 0n;
+export function countScenesInDocument(documentRecord) {
+	validateScreenplayDocument(documentRecord);
+	let sceneCount = 0n;
 	for (const blockItem of documentRecord.blocks) {
 		if (blockItem.type === 'scene_heading') {
-			totalScenes = totalScenes + 1n;
+			sceneCount = sceneCount + 1n;
 		}
 	}
-	return totalScenes.toString();
+	return sceneCount.toString();
 }
 
-export function collectCharacterNamesFromDocument(documentRecord) {
-	validateDocumentStructure(documentRecord);
-	const uniqueNames = new Set();
+export function collectKnownCharacters(documentRecord) {
+	validateScreenplayDocument(documentRecord);
+	const characterSet = new Set();
 	for (const blockItem of documentRecord.blocks) {
 		if (blockItem.type === 'dialogue' && typeof blockItem.speaker === 'string') {
-			const cleanSpeaker = blockItem.speaker.trim().toUpperCase();
-			if (cleanSpeaker.length > 0) {
-				uniqueNames.add(cleanSpeaker);
+			const normalizedName = blockItem.speaker.trim();
+			if (normalizedName.length > 0) {
+				characterSet.add(normalizedName);
 			}
 		}
 	}
-	return Array.from(uniqueNames).sort(function compareAlphabetically(firstItem, secondItem) {
-		return firstItem.localeCompare(secondItem, 'de');
+	return Array.from(characterSet).sort(function compareNames(firstValue, secondValue) {
+		return firstValue.localeCompare(secondValue, 'de');
 	});
 }
 
-export function compareIsoTimestampStrings(firstIsoString, secondIsoString) {
-	const firstMilliseconds = BigInt(Date.parse(firstIsoString));
-	const secondMilliseconds = BigInt(Date.parse(secondIsoString));
-	if (firstMilliseconds < secondMilliseconds) {
+export function compareIsoDatesExact(firstIsoString, secondIsoString) {
+	const firstTimestampMs = BigInt(Date.parse(firstIsoString));
+	const secondTimestampMs = BigInt(Date.parse(secondIsoString));
+	if (firstTimestampMs < secondTimestampMs) {
 		return -1;
 	}
-	if (firstMilliseconds > secondMilliseconds) {
+	if (firstTimestampMs > secondTimestampMs) {
 		return 1;
 	}
 	return 0;
 }
 
-export function filterAndSortDocumentList(documentsArray, searchQuery, sortCriterion, sortDirection) {
+export function filterAndSortDocuments(documentsArray, searchQuery, sortCriterion, sortDirection) {
 	if (!Array.isArray(documentsArray)) {
-		throw new Error('Dokumentenliste ist kein Array.');
+		throw new Error('Dokumentenliste muss ein Array sein.');
 	}
-	const normalizedSearch = typeof searchQuery === 'string' ? searchQuery.trim().toLowerCase() : '';
+	const cleanSearch = typeof searchQuery === 'string' ? searchQuery.trim().toLowerCase() : '';
 	const directionFactor = sortDirection === 'ascending' ? 1 : -1;
 
-	const matchingDocuments = documentsArray.filter(function filterByQuery(documentItem) {
-		if (normalizedSearch.length === 0) {
+	const filteredDocuments = documentsArray.filter(function matchQuery(documentItem) {
+		if (cleanSearch.length === 0) {
 			return true;
 		}
-		const titleMatch = String(documentItem.title || '').toLowerCase().includes(normalizedSearch);
-		const authorMatch = String(documentItem.author || '').toLowerCase().includes(normalizedSearch);
-		return titleMatch || authorMatch;
+		const titleText = String(documentItem.title || '').toLowerCase();
+		const authorText = String(documentItem.author || '').toLowerCase();
+		return titleText.includes(cleanSearch) || authorText.includes(cleanSearch);
 	});
 
-	return matchingDocuments.slice().sort(function sortBySelectedCriterion(firstDocument, secondDocument) {
+	return filteredDocuments.slice().sort(function compareDocumentOrder(firstDocument, secondDocument) {
 		if (sortCriterion === 'title') {
 			const firstTitle = String(firstDocument.title || 'Unbetitelt');
 			const secondTitle = String(secondDocument.title || 'Unbetitelt');
 			return firstTitle.localeCompare(secondTitle, 'de', { sensitivity: 'base' }) * directionFactor;
 		}
 		if (sortCriterion === 'creationTimestamp') {
-			return compareIsoTimestampStrings(firstDocument.creationTimestamp, secondDocument.creationTimestamp) * directionFactor;
+			return compareIsoDatesExact(firstDocument.creationTimestamp, secondDocument.creationTimestamp) * directionFactor;
 		}
-		return compareIsoTimestampStrings(firstDocument.modificationTimestamp, secondDocument.modificationTimestamp) * directionFactor;
+		return compareIsoDatesExact(firstDocument.modificationTimestamp, secondDocument.modificationTimestamp) * directionFactor;
 	});
 }
 
-export function moveArrayElementByIndex(itemsArray, sourceIndex, targetIndex) {
-	if (!Array.isArray(itemsArray)) {
-		throw new Error('Quelldaten sind kein Array.');
+export function moveArrayItem(sourceArray, fromIndex, toIndex) {
+	if (!Array.isArray(sourceArray)) {
+		throw new Error('Quelle ist kein Array.');
 	}
-	if (targetIndex < 0 || targetIndex >= itemsArray.length || sourceIndex === targetIndex) {
-		return itemsArray.slice();
+	if (toIndex < 0 || toIndex >= sourceArray.length || fromIndex === toIndex) {
+		return sourceArray.slice();
 	}
-	const copiedArray = itemsArray.slice();
-	const [extractedItem] = copiedArray.splice(sourceIndex, 1);
-	copiedArray.splice(targetIndex, 0, extractedItem);
-	return copiedArray;
+	const clonedList = sourceArray.slice();
+	const [removedElement] = clonedList.splice(fromIndex, 1);
+	clonedList.splice(toIndex, 0, removedElement);
+	return clonedList;
 }
