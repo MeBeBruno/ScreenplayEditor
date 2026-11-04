@@ -7,43 +7,43 @@ const STORAGE_ONBOARDING_HIDDEN_KEY = 'scriptbridge_onboarding_hidden_v3';
 
 const APRIL_RIDER_DEMO_LATEX = [
 	'\\documentclass{screenplay}[2012/06/30]',
-	'\\title{For a Few Days More}',
+	'\\title{Für ein paar Tage mehr}',
 	'\\author{April Rider}',
-	'\\address{555 George St NNW\\\\Kaplan, ND 77777\\\\999-999-9999}',
+	'\\address{Musterstraße 12\\\\10115 Berlin\\\\Projektkurs Film}',
 	'\\begin{document}',
 	'\\coverpage',
 	'\\fadein',
-	'\\intslug[day]{Driskill Hotel Seminar Room}',
-	'JOE and APRIL burst through the doors into a clean, well-lit seminar room.',
+	'\\intslug[TAG]{Seminarraum im Grand Hotel}',
+	'JOE und APRIL stürmen durch die Flügeltüren in einen hell erleuchteten Seminarraum.',
 	'\\begin{dialogue}{Joe}',
-	'Are we in time?',
+	'Sind wir noch rechtzeitig?',
 	'\\end{dialogue}',
 	'\\begin{dialogue}{April}',
-	'How could they start without us? We\'re the main attraction.',
+	'Wie könnten sie ohne uns anfangen? Wir sind die Hauptattraktion.',
 	'\\end{dialogue}',
-	'Joe catches his breath as he leans against the podium at the front of the room.',
-	'\\begin{dialogue}[looking about the room]{Joe}',
-	'We are?',
+	'Joe schnauft durch und lehnt sich vorne im Raum an das Rednerpult.',
+	'\\begin{dialogue}[blickt sich im Raum um]{Joe}',
+	'Sind wir das?',
 	'\\end{dialogue}',
 	'\\begin{dialogue}{April}',
-	'Don\'t be a moron. You know we\'ve been invited to Austin to discuss script format.',
-	'\\end{dialogue}',
-	'\\begin{dialogue}{Joe}',
-	'But why is the room empty?',
-	'\\end{dialogue}',
-	'April and Joe both look out across the room~-- rows of empty chairs and nary a person in sight.',
-	'\\begin{dialogue}{April}',
-	'Okay, okay, don\'t panic.',
-	'\\end{dialogue}',
-	'She takes three deep breaths. Then she looks at her watch and smiles.',
-	'\\begin{dialogue}[continuing]{April}',
-	'We\'re an hour early.\\dots We should rehearse.',
+	'Stell dich nicht so an. Du weißt genau, dass wir eingeladen wurden, um über das Drehbuchformat zu sprechen.',
 	'\\end{dialogue}',
 	'\\begin{dialogue}{Joe}',
-	'Okay, you start. Margins?',
+	'Aber warum ist der Saal dann komplett leer?',
+	'\\end{dialogue}',
+	'April und Joe blicken beide durch den Raum~-- endlose Reihen leerer Stühle und weit und breit kein Mensch zu sehen.',
+	'\\begin{dialogue}{April}',
+	'Okay, ganz ruhig, keine Panik.',
+	'\\end{dialogue}',
+	'Sie atmet dreimal tief durch. Dann schaut sie auf ihre Armbanduhr und lächelt.',
+	'\\begin{dialogue}[fährt fort]{April}',
+	'Wir sind eine Stunde zu früh.\\dots Wir sollten proben.',
+	'\\end{dialogue}',
+	'\\begin{dialogue}{Joe}',
+	'Alles klar, fang du an. Seitenränder?',
 	'\\end{dialogue}',
 	'\\begin{dialogue}{April}',
-	'Left, 1.5 inches. Right, 1.0 inches. Top, 1.0 inches to the body, 0.5 inches to the number. Bottom, 0.5 to 1.5 inches, depending on where the page break comes.',
+	'Links anderthalb Zoll. Rechts ein Zoll. Oben ein Zoll bis zum Textkörper, ein halber Zoll bis zur Seitenzahl. Unten ein halber bis anderthalb Zoll, je nachdem, wo der Seitenumbruch landet.',
 	'\\end{dialogue}',
 	'\\end{document}'
 ].join('\n');
@@ -81,7 +81,7 @@ export function createEmptyBlockRecord(blockType) {
 			type: 'scene_heading',
 			environment: 'INT',
 			location: '',
-			timeOfDay: 'day'
+			timeOfDay: 'TAG'
 		};
 	}
 	if (blockType === 'dialogue') {
@@ -102,7 +102,7 @@ export function createEmptyBlockRecord(blockType) {
 		return {
 			identifier: generateUniqueIdentifier(),
 			type: 'transition',
-			transitionType: 'CUT TO:'
+			transitionType: 'SCHNITT AUF:'
 		};
 	}
 	return {
@@ -117,9 +117,9 @@ export function createDemoScreenplayDocument() {
 	const parsedDemo = parseLatexScreenplaySource(APRIL_RIDER_DEMO_LATEX, generateUniqueIdentifier);
 	return {
 		identifier: generateUniqueIdentifier(),
-		title: parsedDemo.metadataPatch.title || 'For a Few Days More',
+		title: parsedDemo.metadataPatch.title || 'Für ein paar Tage mehr',
 		author: parsedDemo.metadataPatch.author || 'April Rider',
-		address: parsedDemo.metadataPatch.address || '555 George St NNW\nKaplan, ND 77777\n999-999-9999',
+		address: parsedDemo.metadataPatch.address || 'Musterstraße 12\n10115 Berlin\nProjektkurs Film',
 		creationTimestamp: timestampNow,
 		modificationTimestamp: timestampNow,
 		includeTitlePage: true,
@@ -159,7 +159,7 @@ export function loadDocumentsFromStorage() {
 	}
 	const parsedCollection = JSON.parse(storedJson);
 	if (!Array.isArray(parsedCollection)) {
-		throw new Error('Gespeicherte Dokumentenliste ist ungueltig.');
+		throw new Error('Gespeicherte Dokumentenliste ist ungültig.');
 	}
 	for (const documentItem of parsedCollection) {
 		validateScreenplayDocument(documentItem);
@@ -169,7 +169,7 @@ export function loadDocumentsFromStorage() {
 
 export function saveDocumentsToStorage(documentsArray) {
 	if (!Array.isArray(documentsArray)) {
-		throw new Error('Zu speichernde Dokumente muessen ein Array sein.');
+		throw new Error('Zu speichernde Dokumente müssen ein Array sein.');
 	}
 	for (const documentItem of documentsArray) {
 		validateScreenplayDocument(documentItem);
@@ -218,11 +218,11 @@ export function submitScreenplayToOverleaf(documentTitle, latexSourceCode) {
 		throw new Error('Overleaf-Formular fehlt im Dokument.');
 	}
 
-	const sanitizedName = String(documentTitle || 'screenplay')
+	const sanitizedName = String(documentTitle || 'drehbuch')
 		.trim()
 		.toLowerCase()
 		.replace(/[^a-z0-9äöüß-]+/g, '-')
-		.replace(/^-+|-+$/g, '') || 'screenplay';
+		.replace(/^-+|-+$/g, '') || 'drehbuch';
 
 	filenameField.value = sanitizedName + '.tex';
 	codeField.value = latexSourceCode;

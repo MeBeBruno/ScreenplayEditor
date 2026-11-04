@@ -1,5 +1,21 @@
 import { validateScreenplayDocument } from './domain-logic.js';
 
+const LEGACY_TRANSITION_TRANSLATION_MAP = {
+	'CUT TO:': 'SCHNITT AUF:',
+	'DISSOLVE TO:': 'ÜBERBLENDUNG AUF:',
+	'SMASH CUT TO:': 'HARTER SCHNITT AUF:',
+	'MATCH CUT TO:': 'MATCH CUT AUF:',
+	'FADE TO BLACK.': 'SCHWARZBLENDE.'
+};
+
+export function normalizeTransitionLabel(rawTransitionValue) {
+	const cleanedTransition = String(rawTransitionValue || '').trim().toUpperCase();
+	if (cleanedTransition.length === 0) {
+		return 'SCHNITT AUF:';
+	}
+	return LEGACY_TRANSITION_TRANSLATION_MAP[cleanedTransition] || cleanedTransition;
+}
+
 export function convertPlainTextToScreenplayLatex(rawText) {
 	if (typeof rawText !== 'string') {
 		return '';
@@ -68,7 +84,7 @@ export function compileSceneBlockToLatex(blockItem) {
 		EXTINT: '\\extintslug'
 	};
 	const slugCommand = commandMap[blockItem.environment] || '\\intslug';
-	const locationValue = convertPlainTextToScreenplayLatex(String(blockItem.location || 'Room').trim());
+	const locationValue = convertPlainTextToScreenplayLatex(String(blockItem.location || 'Raum').trim());
 	const timeValue = String(blockItem.timeOfDay || '').trim();
 
 	if (timeValue.length > 0) {
@@ -78,7 +94,7 @@ export function compileSceneBlockToLatex(blockItem) {
 }
 
 export function compileDialogueBlockToLatex(blockItem) {
-	const speakerName = convertPlainTextToScreenplayLatex(String(blockItem.speaker || 'Character').trim());
+	const speakerName = convertPlainTextToScreenplayLatex(String(blockItem.speaker || 'Figur').trim());
 	const rawSegments = Array.isArray(blockItem.segments) ? blockItem.segments : [];
 
 	let leadingModifier = '';
@@ -124,9 +140,9 @@ export function compileScreenplayDocumentToLatex(documentRecord) {
 	const outputLines = [
 		'\\documentclass{screenplay}[2012/06/30]',
 		'',
-		'\\title{' + convertPlainTextToScreenplayLatex(documentRecord.title || 'Untitled Screenplay') + '}',
+		'\\title{' + convertPlainTextToScreenplayLatex(documentRecord.title || 'Unbetiteltes Drehbuch') + '}',
 		'',
-		'\\author{' + convertPlainTextToScreenplayLatex(documentRecord.author || 'Anonymous') + '}'
+		'\\author{' + convertPlainTextToScreenplayLatex(documentRecord.author || 'Anonym') + '}'
 	];
 
 	const compiledAddress = compileAddressToLatexLines(documentRecord.address);
@@ -161,7 +177,7 @@ export function compileScreenplayDocumentToLatex(documentRecord) {
 			outputLines.push(compileDialogueBlockToLatex(blockItem));
 			outputLines.push('');
 		} else if (blockItem.type === 'transition') {
-			const transitionString = convertPlainTextToScreenplayLatex(String(blockItem.transitionType || 'CUT TO:').trim());
+			const transitionString = convertPlainTextToScreenplayLatex(normalizeTransitionLabel(blockItem.transitionType));
 			outputLines.push('\\begin{flushright}\n' + transitionString + '\n\\end{flushright}');
 			outputLines.push('');
 		}
@@ -267,12 +283,14 @@ export function parseLatexScreenplaySource(latexSourceString, identifierGenerato
 				intextslug: 'INTEXT',
 				extintslug: 'EXTINT'
 			};
+			const rawTimeOfDay = matchResult[2] ? convertLatexTokensToPlainText(matchResult[2]) : 'TAG';
+			const normalizedTimeOfDay = rawTimeOfDay.toLowerCase() === 'day' ? 'TAG' : rawTimeOfDay;
 			extractedBlocks.push({
 				identifier: identifierGenerator(),
 				type: 'scene_heading',
 				environment: envMap[commandName] || 'INT',
 				location: convertLatexTokensToPlainText(matchResult[3]),
-				timeOfDay: matchResult[2] ? convertLatexTokensToPlainText(matchResult[2]) : 'day'
+				timeOfDay: normalizedTimeOfDay
 			});
 		} else if (matchResult[5] !== undefined) {
 			const optionalDirection = matchResult[4] ? convertLatexTokensToPlainText(matchResult[4]) : '';
@@ -327,7 +345,7 @@ export function parseLatexScreenplaySource(latexSourceString, identifierGenerato
 			extractedBlocks.push({
 				identifier: identifierGenerator(),
 				type: 'transition',
-				transitionType: convertLatexTokensToPlainText(matchResult[7])
+				transitionType: normalizeTransitionLabel(convertLatexTokensToPlainText(matchResult[7]))
 			});
 		}
 
@@ -341,6 +359,20 @@ export function parseLatexScreenplaySource(latexSourceString, identifierGenerato
 		metadataPatch: metadataPatch,
 		blocks: extractedBlocks
 	};
+}
+
+function resolveEnvironmentCodeFromPrefix(rawPrefixString) {
+	const normalizedPrefix = rawPrefixString.toUpperCase().replace(/\./g, '');
+	if (normalizedPrefix === 'INT/EXT' || normalizedPrefix === 'INNEN/AUSSEN') {
+		return 'INTEXT';
+	}
+	if (normalizedPrefix === 'EXT/INT' || normalizedPrefix === 'AUSSEN/INNEN') {
+		return 'EXTINT';
+	}
+	if (normalizedPrefix.startsWith('EXT') || normalizedPrefix.startsWith('AUSSEN')) {
+		return 'EXT';
+	}
+	return 'INT';
 }
 
 export function parsePlainTextScreenplay(rawPlainText, identifierGenerator) {
@@ -382,35 +414,30 @@ export function parsePlainTextScreenplay(rawPlainText, identifierGenerator) {
 			continue;
 		}
 
-		const slugMatch = trimmedLine.match(/^(INT\.\/EXT\.|INT\.|EXT\.|INNEN\.|AUSSEN\.)\s+([^-\n]+?)(?:\s+-\s+(.+))?$/i);
+		const slugMatch = trimmedLine.match(/^(INT\.\/EXT\.|EXT\.\/INT\.|INT\.|EXT\.|INNEN\/AUSSEN\.?|AUSSEN\/INNEN\.?|INNEN\.?|AUSSEN\.?)\s+([^-\n]+?)(?:\s+-\s+(.+))?$/i);
 		if (slugMatch !== null) {
 			flushActionLines();
 			flushDialogueBlock();
-			const rawPrefix = slugMatch[1].toUpperCase();
-			let environmentValue = 'INT';
-			if (rawPrefix.includes('INT./EXT.')) {
-				environmentValue = 'INTEXT';
-			} else if (rawPrefix.startsWith('EXT') || rawPrefix.startsWith('AUSSEN')) {
-				environmentValue = 'EXT';
-			}
+			const environmentValue = resolveEnvironmentCodeFromPrefix(slugMatch[1]);
+			const rawTime = slugMatch[3] ? slugMatch[3].trim().toUpperCase() : 'TAG';
 			parsedBlocks.push({
 				identifier: identifierGenerator(),
 				type: 'scene_heading',
 				environment: environmentValue,
 				location: slugMatch[2].trim(),
-				timeOfDay: slugMatch[3] ? slugMatch[3].trim().toLowerCase() : 'day'
+				timeOfDay: rawTime === 'DAY' ? 'TAG' : rawTime
 			});
 			continue;
 		}
 
-		const transitionMatch = trimmedLine.match(/^(CUT TO:|DISSOLVE TO:|SMASH CUT TO:|MATCH CUT TO:|FADE TO BLACK\.)$/i);
+		const transitionMatch = trimmedLine.match(/^(CUT TO:|DISSOLVE TO:|SMASH CUT TO:|MATCH CUT TO:|FADE TO BLACK\.|SCHNITT AUF:|ÜBERBLENDUNG AUF:|HARTER SCHNITT AUF:|MATCH CUT AUF:|SCHWARZBLENDE\.)$/i);
 		if (transitionMatch !== null) {
 			flushActionLines();
 			flushDialogueBlock();
 			parsedBlocks.push({
 				identifier: identifierGenerator(),
 				type: 'transition',
-				transitionType: transitionMatch[1].toUpperCase()
+				transitionType: normalizeTransitionLabel(transitionMatch[1])
 			});
 			continue;
 		}
@@ -466,7 +493,7 @@ export function parsePlainTextScreenplay(rawPlainText, identifierGenerator) {
 
 export function parseUniversalScriptInput(rawInputString, identifierGenerator) {
 	if (typeof rawInputString !== 'string' || rawInputString.trim().length === 0) {
-		throw new Error('Bitte zuerst einen Text oder LaTeX-Code einfuegen.');
+		throw new Error('Bitte zuerst einen Text oder LaTeX-Code einfügen.');
 	}
 	const looksLikeLatex = rawInputString.includes('\\documentclass')
 		|| rawInputString.includes('\\begin{dialogue}')
@@ -481,8 +508,8 @@ export function parseUniversalScriptInput(rawInputString, identifierGenerator) {
 
 export function buildPromptTemplateForArtificialIntelligence() {
 	return [
-		'Schreibe die Szene entweder als LaTeX fuer \\documentclass{screenplay}[2012/06/30] (mit \\intslug[day]{Ort} und \\begin{dialogue}[Regie]{Figur} ... \\end{dialogue}) oder im klassischen US-Drehbuchformat:',
-		'INT. SCHAUPLATZ - DAY',
+		'Schreibe die Szene entweder als LaTeX für \\documentclass{screenplay}[2012/06/30] (mit \\intslug[TAG]{Ort} und \\begin{dialogue}[Regie]{Figur} ... \\end{dialogue}) oder im klassischen Drehbuchformat:',
+		'INNEN SCHAUPLATZ - TAG',
 		'Handlungstext als Absatz.',
 		'FIGURENNAME (optional Regieanweisung)',
 		'Gesprochener Dialogtext.'

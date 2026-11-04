@@ -16,6 +16,7 @@ import {
 import {
 	buildPromptTemplateForArtificialIntelligence,
 	compileScreenplayDocumentToLatex,
+	normalizeTransitionLabel,
 	parseUniversalScriptInput
 } from './latex-processor.js';
 
@@ -150,7 +151,7 @@ function synchronizePrintPreviewNodes(activeDocument) {
 	} else {
 		printCover.classList.remove('cover-enabled');
 	}
-	printTitle.textContent = activeDocument.title || 'Untitled Screenplay';
+	printTitle.textContent = activeDocument.title || 'Unbetiteltes Drehbuch';
 	printAuthor.textContent = activeDocument.author || '';
 	printAddress.textContent = activeDocument.address || '';
 
@@ -407,10 +408,10 @@ function buildSceneHeadingDom(blockItem) {
 	prefixSelect.setAttribute('data-field-key', 'environment');
 	prefixSelect.setAttribute('aria-label', 'Innen oder Außen');
 	const environmentOptions = [
-		['INT', 'INT.'],
-		['EXT', 'EXT.'],
-		['INTEXT', 'INT./EXT.'],
-		['EXTINT', 'EXT./INT.']
+		['INT', 'INNEN'],
+		['EXT', 'AUSSEN'],
+		['INTEXT', 'INNEN/AUSSEN'],
+		['EXTINT', 'AUSSEN/INNEN']
 	];
 	for (const [environmentCode, environmentLabel] of environmentOptions) {
 		prefixSelect.appendChild(new Option(environmentLabel, environmentCode));
@@ -433,8 +434,9 @@ function buildSceneHeadingDom(blockItem) {
 	timeField.type = 'text';
 	timeField.className = 'slugline-time-field';
 	timeField.setAttribute('list', 'slugline-times-datalist');
-	timeField.placeholder = 'DAY';
-	timeField.value = blockItem.timeOfDay || '';
+	timeField.placeholder = 'TAG';
+	const currentTimeValue = String(blockItem.timeOfDay || '');
+	timeField.value = currentTimeValue.toLowerCase() === 'day' ? 'TAG' : currentTimeValue;
 	timeField.setAttribute('data-field-key', 'timeOfDay');
 	timeField.setAttribute('aria-label', 'Tageszeit');
 
@@ -560,16 +562,20 @@ function buildTransitionDom(blockItem) {
 	selectControl.setAttribute('data-field-key', 'transitionType');
 	selectControl.setAttribute('aria-label', 'Szenenübergang');
 	const transitionOptions = [
-		'CUT TO:',
-		'DISSOLVE TO:',
-		'SMASH CUT TO:',
-		'MATCH CUT TO:',
-		'FADE TO BLACK.'
+		'SCHNITT AUF:',
+		'ÜBERBLENDUNG AUF:',
+		'HARTER SCHNITT AUF:',
+		'MATCH CUT AUF:',
+		'SCHWARZBLENDE.'
 	];
 	for (const optionText of transitionOptions) {
 		selectControl.appendChild(new Option(optionText, optionText));
 	}
-	selectControl.value = blockItem.transitionType || 'CUT TO:';
+	const resolvedTransition = normalizeTransitionLabel(blockItem.transitionType);
+	if (!transitionOptions.includes(resolvedTransition)) {
+		selectControl.appendChild(new Option(resolvedTransition, resolvedTransition));
+	}
+	selectControl.value = resolvedTransition;
 	transitionRow.appendChild(selectControl);
 	return transitionRow;
 }
@@ -983,7 +989,7 @@ function bindDashboardEvents() {
 	exportBackupButton.addEventListener('click', function onExportBackup() {
 		executeSafely(function downloadAllJson() {
 			const payload = JSON.stringify(applicationState.documents, null, '\t');
-			triggerBrowserFileDownload('scriptbridge-sammlung.json', payload, 'application/json');
+			triggerBrowserFileDownload('drehbuch-sammlung.json', payload, 'application/json');
 			backupDropdown.classList.add('is-hidden');
 			showToastNotification('Sammlung als Backup gespeichert.');
 		});
@@ -1079,7 +1085,7 @@ function bindDashboardEvents() {
 				});
 				if (targetDocumentRecord) {
 					const compiledTex = compileScreenplayDocumentToLatex(targetDocumentRecord);
-					triggerBrowserFileDownload((targetDocumentRecord.title || 'screenplay') + '.tex', compiledTex, 'text/x-tex');
+					triggerBrowserFileDownload((targetDocumentRecord.title || 'drehbuch') + '.tex', compiledTex, 'text/x-tex');
 					renderDashboardDocumentGrid();
 					showToastNotification('.tex-Datei gespeichert.');
 				}
@@ -1471,7 +1477,7 @@ function bindTopBarAndImportEvents() {
 				return;
 			}
 			const latexCode = compileScreenplayDocumentToLatex(activeDocument);
-			triggerBrowserFileDownload((activeDocument.title || 'screenplay') + '.tex', latexCode, 'text/x-tex');
+			triggerBrowserFileDownload((activeDocument.title || 'drehbuch') + '.tex', latexCode, 'text/x-tex');
 			exportDropdownMenu.classList.add('is-hidden');
 			showToastNotification('.tex-Datei gespeichert.');
 		});

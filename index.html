@@ -3,7 +3,7 @@
 <head>
 	<meta charset='UTF-8'>
 	<meta name='viewport' content='width=device-width, initial-scale=1.0'>
-	<title>ScriptBridge — Drehbuch-Studio</title>
+	<title>Drehbuch Editor</title>
 	<link rel='stylesheet' href='./styles/design-tokens.css'>
 	<link rel='stylesheet' href='./styles/workspace-layout.css'>
 </head>
@@ -20,7 +20,7 @@
 				<span class='brand-badge-circle'>
 					<span data-icon-name='clapperboard' class='icon-slot brand-icon'></span>
 				</span>
-				<span class='brand-name'>ScriptBridge</span>
+				<span class='brand-name'>Drehbuch Editor</span>
 			</div>
 			<span id='save-status-text' class='save-status-pill is-hidden' role='status' aria-live='polite'></span>
 		</div>
@@ -34,7 +34,7 @@
 			<div id='editor-header-toolbar' class='editor-toolbar-actions is-hidden'>
 				<button type='button' id='open-import-modal-button' class='button-secondary'>
 					<span data-icon-name='sparkles' class='icon-slot'></span>
-					<span>Text / KI-Szene einfügen</span>
+					<span>Code einfügen</span>
 				</button>
 
 				<button type='button' id='direct-pdf-print-button' class='button-secondary' title='Direkt im Browser als PDF speichern oder drucken'>
@@ -119,7 +119,7 @@
 			<div id='printable-cover-page' class='print-only-cover-page'>
 				<div class='print-cover-center'>
 					<h1 id='print-cover-title' class='print-title-heading'></h1>
-					<p class='print-byline-prefix'>by</p>
+					<p class='print-byline-prefix'>geschrieben von</p>
 					<p id='print-cover-author' class='print-author-name'></p>
 				</div>
 				<div id='print-cover-address' class='print-cover-address-box'></div>
@@ -151,26 +151,26 @@
 							</label>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-fadein-checkbox'>
-								<span>Mit <strong>FADE IN:</strong> beginnen</span>
+								<span>Mit <strong>AUFBLENDE:</strong> beginnen</span>
 							</label>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-fadeout-checkbox'>
-								<span>Mit <strong>FADE OUT.</strong> ausblenden</span>
+								<span>Mit <strong>ABBLENDE.</strong> ausblenden</span>
 							</label>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-theend-checkbox'>
-								<span>Mit <strong>THE END</strong> abschließen</span>
+								<span>Mit <strong>ENDE</strong> abschließen</span>
 							</label>
 						</div>
 					</div>
 				</header>
 
-				<div id='fade-in-print-marker' class='manuscript-static-marker'>FADE IN:</div>
+				<div id='fade-in-print-marker' class='manuscript-static-marker'>AUFBLENDE:</div>
 
 				<div id='manuscript-blocks-list' class='manuscript-blocks-stream' role='list' aria-label='Drehbuch-Bausteine'></div>
 
-				<div id='fade-out-print-marker' class='manuscript-static-marker marker-right'>FADE OUT.</div>
-				<div id='the-end-print-marker' class='manuscript-static-marker marker-center'>THE END</div>
+				<div id='fade-out-print-marker' class='manuscript-static-marker marker-right'>ABBLENDE.</div>
+				<div id='the-end-print-marker' class='manuscript-static-marker marker-center'>ENDE</div>
 
 				<footer class='manuscript-bottom-toolbar no-print' role='toolbar' aria-label='Neuen Baustein am Ende einfügen'>
 					<span class='toolbar-caption'>Neuen Abschnitt anfügen:</span>
@@ -228,7 +228,7 @@
 					<div class='onboarding-step-body'>
 						<span class='step-number-badge badge-pastel-sage'>Schritt 2</span>
 						<h3 class='onboarding-step-title'>Sanfte Bausteine statt Formatierungs-Stress</h3>
-						<p class='onboarding-step-text'>Wähle einfach zwischen Szene, Handlung, Dialog und Übergang. Alle Einrückungen, Großbuchstaben und Regieklammern erledigt ScriptBridge automatisch im Hintergrund.</p>
+						<p class='onboarding-step-text'>Wähle einfach zwischen Szene, Handlung, Dialog und Übergang. Alle Einrückungen, Großbuchstaben und Regieklammern erledigt Drehbuch Editor automatisch im Hintergrund.</p>
 					</div>
 				</article>
 
@@ -264,18 +264,17 @@
 			</div>
 
 			<p class='modal-explanation-text'>
-				Kopiere eine Szene aus ChatGPT, Claude oder bestehenden LaTeX-Code hier hinein. Wir wandeln deinen Text automatisch in passende Drehbuch-Bausteine um.
+				Kopiere LaTeX-Code hier hinein. Der Text wird automatisch in passende Drehbuch-Bausteine umgewandelt.
 			</p>
 
 			<div class='ai-prompt-helper-box'>
-				<span>Du möchtest dir eine Szene von einer KI schreiben lassen?</span>
 				<button type='button' id='copy-ai-prompt-template-button' class='button-subtle-link'>
 					<span data-icon-name='copy' class='icon-slot'></span>
 					<span>Passende KI-Vorlage kopieren</span>
 				</button>
 			</div>
 
-			<textarea id='import-raw-source-textarea' class='textarea-control import-source-textarea' rows='9' placeholder='INT. CAFÉ AM MORGEN - DAY&#10;&#10;LINA rührt gedankenverloren in ihrem Kakao...&#10;&#10;LINA (leise)&#10;Glaubst du, sie haben uns bemerkt?' aria-label='Einzufügender Drehbuch- oder LaTeX-Text'></textarea>
+			<textarea id='import-raw-source-textarea' class='textarea-control import-source-textarea' rows='9' placeholder='INNEN CAFÉ AM MORGEN - TAG&#10;&#10;LINA rührt gedankenverloren in ihrem Kakao...&#10;&#10;LINA (leise)&#10;Glaubst du, sie haben uns bemerkt?' aria-label='Einzufügender Drehbuch- oder LaTeX-Text'></textarea>
 
 			<div class='modal-footer-actions'>
 				<label class='checkbox-option-label'>
@@ -296,18 +295,16 @@
 	<datalist id='known-characters-datalist'></datalist>
 
 	<datalist id='slugline-times-datalist'>
-		<option value='day'></option>
-		<option value='night'></option>
-		<option value='continuous'></option>
-		<option value='later'></option>
-		<option value='morning'></option>
-		<option value='evening'></option>
 		<option value='TAG'></option>
 		<option value='NACHT'></option>
+		<option value='FORTLAUFEND'></option>
+		<option value='SPÄTER'></option>
+		<option value='MORGEN'></option>
+		<option value='ABEND'></option>
 	</datalist>
 
 	<form id='overleaf-post-form' action='https://www.overleaf.com/docs' method='post' target='_blank' class='visually-hidden'>
-		<input type='hidden' name='snip_name' id='overleaf-snip-filename' value='screenplay.tex'>
+		<input type='hidden' name='snip_name' id='overleaf-snip-filename' value='drehbuch.tex'>
 		<textarea name='snip' id='overleaf-snip-code'></textarea>
 	</form>
 
