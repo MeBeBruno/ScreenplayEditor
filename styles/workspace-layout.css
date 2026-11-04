@@ -369,6 +369,9 @@ body {
 .button-ghost:focus-visible,
 .button-icon-square:focus-visible,
 .button-pill-add:focus-visible,
+.block-drag-handle:focus-visible,
+.block-tool-button:focus-visible,
+.block-type-select-pill:focus-visible,
 .document-sheet-trigger:focus-visible {
 	outline: none;
 	box-shadow: var(--focus-outline-ring);
@@ -725,13 +728,41 @@ body {
 	padding: var(--space-100) var(--space-125);
 	border-radius: var(--radius-medium);
 	border: 0.0625rem solid transparent;
-	transition: background-color var(--transition-fast), border-color var(--transition-fast);
+	transition: background-color var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
 }
 
 .manuscript-block-node:hover,
 .manuscript-block-node:focus-within {
 	background-color: color-mix(in oklch, var(--color-surface-muted) 55%, transparent);
 	border-color: var(--color-border-hairline);
+}
+
+.manuscript-block-node.is-being-dragged {
+	opacity: 0.45;
+	background-color: var(--color-brand-tint);
+	border-color: var(--color-brand-primary);
+	border-style: dashed;
+}
+
+.manuscript-block-node.is-drop-target-before::before,
+.manuscript-block-node.is-drop-target-after::after {
+	content: '';
+	position: absolute;
+	left: var(--space-075);
+	right: var(--space-075);
+	height: 0.25rem;
+	background-color: var(--color-brand-primary);
+	border-radius: var(--radius-pill);
+	pointer-events: none;
+	z-index: 15;
+}
+
+.manuscript-block-node.is-drop-target-before::before {
+	top: -0.5rem;
+}
+
+.manuscript-block-node.is-drop-target-after::after {
+	bottom: -0.5rem;
 }
 
 .block-context-toolbar {
@@ -758,6 +789,38 @@ body {
 	display: flex;
 	align-items: center;
 	gap: var(--space-050);
+}
+
+.block-drag-handle {
+	min-width: 1.875rem;
+	min-height: 1.875rem;
+	background-color: var(--color-surface-paper);
+	color: var(--color-text-secondary);
+	border: 0.0625rem solid var(--color-border-hairline);
+	border-radius: var(--radius-pill);
+	padding: var(--space-025) var(--space-050);
+	cursor: grab;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	touch-action: none;
+	user-select: none;
+	transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.block-drag-handle:hover:not(:disabled) {
+	color: var(--color-brand-primary);
+	background-color: var(--color-brand-tint);
+	border-color: color-mix(in oklch, var(--color-brand-primary) 30%, transparent);
+}
+
+.block-drag-handle:active:not(:disabled) {
+	cursor: grabbing;
+}
+
+.block-drag-handle:disabled {
+	opacity: 0.3;
+	cursor: default;
 }
 
 .block-type-select-pill {
@@ -1297,6 +1360,7 @@ body {
 		pointer-events: auto;
 	}
 
+	.block-drag-handle,
 	.block-tool-button,
 	.block-type-select-pill {
 		min-height: 2.375rem;

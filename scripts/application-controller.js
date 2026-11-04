@@ -9,6 +9,7 @@ import {
 	countScenesInDocument,
 	filterAndSortDocuments,
 	moveArrayItem,
+	reorderBlocksByIdentifier,
 	validateScreenplayDocument
 } from './domain-logic.js';
 
@@ -39,7 +40,10 @@ const applicationState = {
 	sortCriterion: 'modificationTimestamp',
 	sortDirection: 'descending',
 	openCardMenuIdentifier: null,
-	isOnboardingHidden: false
+	isOnboardingHidden: false,
+	draggedBlockIdentifier: null,
+	dropTargetBlockIdentifier: null,
+	dropPlacementPosition: null
 };
 
 function showToastNotification(messageText) {
@@ -582,6 +586,15 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	const leftCluster = document.createElement('div');
 	leftCluster.className = 'toolbar-left-cluster';
 
+	const dragHandleButton = document.createElement('button');
+	dragHandleButton.type = 'button';
+	dragHandleButton.className = 'block-drag-handle';
+	dragHandleButton.setAttribute('data-block-command', 'drag-handle');
+	dragHandleButton.disabled = totalBlockCount <= 1;
+	dragHandleButton.setAttribute('aria-label', 'Abschnitt ziehen zum Verschieben oder Pfeiltasten nutzen');
+	dragHandleButton.setAttribute('title', 'Ziehen zum Verschieben');
+	dragHandleButton.appendChild(createIconSpanElement('gripVertical'));
+
 	const typeSelect = document.createElement('select');
 	typeSelect.className = 'block-type-select-pill block-type-pill-' + String(blockItem.type);
 	typeSelect.setAttribute('data-block-command', 'change-type');
@@ -622,6 +635,7 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	insertLabel.textContent = 'Darunter einfügen';
 	insertBelowButton.appendChild(insertLabel);
 
+	leftCluster.appendChild(dragHandleButton);
 	leftCluster.appendChild(typeSelect);
 	leftCluster.appendChild(moveUpButton);
 	leftCluster.appendChild(moveDownButton);
@@ -676,6 +690,60 @@ function focusPrimaryInputInsideBlock(blockIdentifier, optionalSegmentIdentifier
 	);
 	if (primaryInput !== null) {
 		primaryInput.focus();
+	}
+}
+
+function focusDragHandleInsideBlock(blockIdentifier) {
+	const streamContainer = document.getElementById('manuscript-blocks-list');
+	if (streamContainer === null || !blockIdentifier) {
+		return;
+	}
+	const dragHandle = streamContainer.querySelector(
+		'[data-block-identifier=\'' + blockIdentifier + '\'] .block-drag-handle'
+	);
+	if (dragHandle !== null) {
+		dragHandle.focus();
+	}
+}
+
+function clearBlockDragVisualClasses() {
+	const streamContainer = document.getElementById('manuscript-blocks-list');
+	if (streamContainer === null) {
+		return;
+	}
+	const blockNodes = streamContainer.querySelectorAll('.manuscript-block-node');
+	for (const blockNode of blockNodes) {
+		blockNode.classList.remove('is-being-dragged', 'is-drop-target-before', 'is-drop-target-after');
+		blockNode.removeAttribute('draggable');
+	}
+}
+
+function resetDragStateAndVisuals() {
+	applicationState.draggedBlockIdentifier = null;
+	applicationState.dropTargetBlockIdentifier = null;
+	applicationState.dropPlacementPosition = null;
+	clearBlockDragVisualClasses();
+}
+
+function calculateVerticalDropPlacement(targetBlockNode, pointerClientY) {
+	const boundingRectangle = targetBlockNode.getBoundingClientRect();
+	const verticalMidpoint = boundingRectangle.top + (boundingRectangle.height / 2);
+	return pointerClientY < verticalMidpoint ? 'before' : 'after';
+}
+
+function applyDropTargetHighlight(targetBlockNode, placementPosition) {
+	const streamContainer = document.getElementById('manuscript-blocks-list');
+	if (streamContainer === null) {
+		return;
+	}
+	const allBlockNodes = streamContainer.querySelectorAll('.manuscript-block-node');
+	for (const singleBlockNode of allBlockNodes) {
+		singleBlockNode.classList.remove('is-drop-target-before', 'is-drop-target-after');
+	}
+	if (placementPosition === 'before') {
+		targetBlockNode.classList.add('is-drop-target-before');
+	} else {
+		targetBlockNode.classList.add('is-drop-target-after');
 	}
 }
 
@@ -757,6 +825,100 @@ function convertBlockPreservingContent(existingBlock, targetType) {
 		}).join(' ');
 	}
 	return convertedBlock;
+}
+
+function bindBlockDragAndDropEvents(blocksStream) {
+	blocksStream.addEventListener('pointerdown', function onPointerDownOnStream(eventObject) {
+		const dragHandle = eventObject.target.closest('.block-drag-handle');
+		if (dragHandle === null || dragHandle.disabled) {
+			return;
+		}
+		const blockNode = dragHandle.closest('[data-block-identifier]');
+		if (blockNode !== null) {
+			blockNode.setAttribute('draggable', 'true');
+		}
+	});
+
+	blocksStream.addEventListener('pointerup', function onPointerUpOnStream() {
+		if (applicationState.draggedBlockIdentifier === null) {
+			clearBlockDragVisualClasses();
+		}
+	});
+
+	blocksStream.addEventListener('dragstart', function onBlockDragStart(eventObject) {
+		const blockNode = eventObject.target.closest('[data-block-identifier]');
+		if (blockNode === null || blockNode.getAttribute('draggable') !== 'true') {
+			eventObject.preventDefault();
+			return;
+		}
+		const blockIdentifier = blockNode.getAttribute('data-block-identifier');
+		applicationState.draggedBlockIdentifier = blockIdentifier;
+		if (eventObject.dataTransfer) {
+			eventObject.dataTransfer.effectAllowed = 'move';
+			eventObject.dataTransfer.setData('text/plain', blockIdentifier);
+		}
+		window.requestAnimationFrame(function markDraggedNode() {
+			blockNode.classList.add('is-being-dragged');
+		});
+	});
+
+	blocksStream.addEventListener('dragover', function onBlockDragOver(eventObject) {
+		if (applicationState.draggedBlockIdentifier === null) {
+			return;
+		}
+		eventObject.preventDefault();
+		if (eventObject.dataTransfer) {
+			eventObject.dataTransfer.dropEffect = 'move';
+		}
+		const targetBlockNode = eventObject.target.closest('[data-block-identifier]');
+		if (targetBlockNode === null) {
+			return;
+		}
+		const targetIdentifier = targetBlockNode.getAttribute('data-block-identifier');
+		if (targetIdentifier === applicationState.draggedBlockIdentifier) {
+			applicationState.dropTargetBlockIdentifier = null;
+			applicationState.dropPlacementPosition = null;
+			targetBlockNode.classList.remove('is-drop-target-before', 'is-drop-target-after');
+			return;
+		}
+		const placementPosition = calculateVerticalDropPlacement(targetBlockNode, eventObject.clientY);
+		applicationState.dropTargetBlockIdentifier = targetIdentifier;
+		applicationState.dropPlacementPosition = placementPosition;
+		applyDropTargetHighlight(targetBlockNode, placementPosition);
+	});
+
+	blocksStream.addEventListener('drop', function onBlockDrop(eventObject) {
+		if (applicationState.draggedBlockIdentifier === null) {
+			return;
+		}
+		eventObject.preventDefault();
+		executeSafely(function commitBlockDrop() {
+			const activeDocument = getActiveDocument();
+			const draggedIdentifier = applicationState.draggedBlockIdentifier;
+			const targetIdentifier = applicationState.dropTargetBlockIdentifier;
+			const placementPosition = applicationState.dropPlacementPosition;
+			resetDragStateAndVisuals();
+
+			if (activeDocument === null || !draggedIdentifier || !targetIdentifier || !placementPosition) {
+				return;
+			}
+			activeDocument.blocks = reorderBlocksByIdentifier(
+				activeDocument.blocks,
+				draggedIdentifier,
+				targetIdentifier,
+				placementPosition
+			);
+			saveAndTouchActiveDocument(activeDocument);
+			renderManuscriptBlocksStream(activeDocument);
+			window.requestAnimationFrame(function restoreHandleFocus() {
+				focusDragHandleInsideBlock(draggedIdentifier);
+			});
+		});
+	});
+
+	blocksStream.addEventListener('dragend', function onBlockDragEnd() {
+		resetDragStateAndVisuals();
+	});
 }
 
 function bindDashboardEvents() {
@@ -1000,13 +1162,44 @@ function bindEditorEvents() {
 		}
 	});
 
+	bindBlockDragAndDropEvents(blocksStream);
+
 	blocksStream.addEventListener('keydown', function onBlockStreamKeydown(eventObject) {
-		if (eventObject.key !== 'Enter') {
-			return;
-		}
 		const targetElement = eventObject.target;
 		const blockNode = targetElement.closest('[data-block-identifier]');
 		if (blockNode === null) {
+			return;
+		}
+
+		if (targetElement.classList.contains('block-drag-handle') && (eventObject.key === 'ArrowUp' || eventObject.key === 'ArrowDown')) {
+			eventObject.preventDefault();
+			executeSafely(function moveBlockWithKeyboard() {
+				const activeDocument = getActiveDocument();
+				if (activeDocument === null) {
+					return;
+				}
+				const blockIdentifier = blockNode.getAttribute('data-block-identifier');
+				const currentBlockIndex = activeDocument.blocks.findIndex(function findBlockIndex(item) {
+					return item.identifier === blockIdentifier;
+				});
+				if (currentBlockIndex === -1) {
+					return;
+				}
+				const destinationIndex = eventObject.key === 'ArrowUp' ? currentBlockIndex - 1 : currentBlockIndex + 1;
+				if (destinationIndex < 0 || destinationIndex >= activeDocument.blocks.length) {
+					return;
+				}
+				activeDocument.blocks = moveArrayItem(activeDocument.blocks, currentBlockIndex, destinationIndex);
+				saveAndTouchActiveDocument(activeDocument);
+				renderManuscriptBlocksStream(activeDocument);
+				window.requestAnimationFrame(function refocusHandle() {
+					focusDragHandleInsideBlock(blockIdentifier);
+				});
+			});
+			return;
+		}
+
+		if (eventObject.key !== 'Enter') {
 			return;
 		}
 		if (targetElement.classList.contains('slugline-location-field')) {
@@ -1126,6 +1319,9 @@ function bindEditorEvents() {
 				return;
 			}
 			const commandName = commandButton.getAttribute('data-block-command');
+			if (commandName === 'drag-handle') {
+				return;
+			}
 			const activeDocument = getActiveDocument();
 			if (activeDocument === null) {
 				return;

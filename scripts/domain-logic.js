@@ -1,6 +1,6 @@
 export function validateNonEmptyText(inputValue, fieldName) {
 	if (typeof inputValue !== 'string' || inputValue.trim().length === 0) {
-		throw new Error('Ungueltiger Textwert fuer Feld: ' + String(fieldName));
+		throw new Error('Ungültiger Textwert für Feld: ' + String(fieldName));
 	}
 	return inputValue;
 }
@@ -13,7 +13,7 @@ export function validateScreenplayDocument(documentRecord) {
 	validateNonEmptyText(documentRecord.creationTimestamp, 'creationTimestamp');
 	validateNonEmptyText(documentRecord.modificationTimestamp, 'modificationTimestamp');
 	if (!Array.isArray(documentRecord.blocks)) {
-		throw new Error('Dokument enthaelt keine gueltige Blockliste.');
+		throw new Error('Dokument enthält keine gültige Blockliste.');
 	}
 	return documentRecord;
 }
@@ -46,12 +46,12 @@ export function collectKnownCharacters(documentRecord) {
 }
 
 export function compareIsoDatesExact(firstIsoString, secondIsoString) {
-	const firstTimestampMs = BigInt(Date.parse(firstIsoString));
-	const secondTimestampMs = BigInt(Date.parse(secondIsoString));
-	if (firstTimestampMs < secondTimestampMs) {
+	const firstTimestampMilliseconds = BigInt(Date.parse(firstIsoString));
+	const secondTimestampMilliseconds = BigInt(Date.parse(secondIsoString));
+	if (firstTimestampMilliseconds < secondTimestampMilliseconds) {
 		return -1;
 	}
-	if (firstTimestampMs > secondTimestampMs) {
+	if (firstTimestampMilliseconds > secondTimestampMilliseconds) {
 		return 1;
 	}
 	return 0;
@@ -97,4 +97,30 @@ export function moveArrayItem(sourceArray, fromIndex, toIndex) {
 	const [removedElement] = clonedList.splice(fromIndex, 1);
 	clonedList.splice(toIndex, 0, removedElement);
 	return clonedList;
+}
+
+export function reorderBlocksByIdentifier(blocksArray, draggedIdentifier, targetIdentifier, placementPosition) {
+	if (!Array.isArray(blocksArray)) {
+		throw new Error('Blockliste muss ein Array sein.');
+	}
+	if (!draggedIdentifier || !targetIdentifier || draggedIdentifier === targetIdentifier) {
+		return blocksArray.slice();
+	}
+	const sourceIndex = blocksArray.findIndex(function matchDragged(blockItem) {
+		return blockItem.identifier === draggedIdentifier;
+	});
+	const initialTargetIndex = blocksArray.findIndex(function matchTarget(blockItem) {
+		return blockItem.identifier === targetIdentifier;
+	});
+	if (sourceIndex === -1 || initialTargetIndex === -1) {
+		return blocksArray.slice();
+	}
+	const workingList = blocksArray.slice();
+	const [draggedBlockRecord] = workingList.splice(sourceIndex, 1);
+	const updatedTargetIndex = workingList.findIndex(function matchRemainingTarget(blockItem) {
+		return blockItem.identifier === targetIdentifier;
+	});
+	const insertionIndex = placementPosition === 'after' ? updatedTargetIndex + 1 : updatedTargetIndex;
+	workingList.splice(insertionIndex, 0, draggedBlockRecord);
+	return workingList;
 }
