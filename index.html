@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang='de' data-theme='system'>
+<html lang='de'>
 <head>
 	<meta charset='UTF-8'>
 	<meta name='viewport' content='width=device-width, initial-scale=1.0'>
@@ -17,14 +17,16 @@
 				<span>Alle Drehbücher</span>
 			</button>
 			<div id='brand-header-title' class='brand-identity'>
-				<span data-icon-name='clapperboard' class='icon-slot brand-icon'></span>
+				<span class='brand-badge-circle'>
+					<span data-icon-name='clapperboard' class='icon-slot brand-icon'></span>
+				</span>
 				<span class='brand-name'>ScriptBridge</span>
 			</div>
 			<span id='save-status-text' class='save-status-pill is-hidden' role='status' aria-live='polite'></span>
 		</div>
 
 		<div class='navigation-right-group'>
-			<button type='button' id='show-onboarding-guide-button' class='button-ghost' aria-label='Kurzanleitung einblenden'>
+			<button type='button' id='show-onboarding-guide-button' class='button-ghost' aria-label='Kurzanleitung als Popup öffnen'>
 				<span data-icon-name='helpCircle' class='icon-slot'></span>
 				<span class='hide-on-small-mobile'>Anleitung</span>
 			</button>
@@ -32,12 +34,12 @@
 			<div id='editor-header-toolbar' class='editor-toolbar-actions is-hidden'>
 				<button type='button' id='open-import-modal-button' class='button-secondary'>
 					<span data-icon-name='sparkles' class='icon-slot'></span>
-					<span>KI-Text / LaTeX einfügen</span>
+					<span>Text / KI-Szene einfügen</span>
 				</button>
 
 				<button type='button' id='direct-pdf-print-button' class='button-secondary' title='Direkt im Browser als PDF speichern oder drucken'>
 					<span data-icon-name='printer' class='icon-slot'></span>
-					<span class='hide-on-small-mobile'>Sofort-PDF</span>
+					<span class='hide-on-small-mobile'>Als PDF drucken</span>
 				</button>
 
 				<div class='split-button-container'>
@@ -60,99 +62,51 @@
 					</div>
 				</div>
 			</div>
-
-			<button type='button' id='cycle-theme-mode-button' class='button-icon-square' aria-label='Farbschema umschalten' title='Darstellung wechseln (System / Hell / Dunkel)'>
-				<span data-icon-name='sunMoon' class='icon-slot'></span>
-			</button>
 		</div>
 	</header>
 
 	<main id='main-workspace' class='workspace-shell' tabindex='-1'>
 		<section id='dashboard-view-container' class='dashboard-view no-print' aria-label='Drehbuch-Übersicht'>
-			<aside id='onboarding-guide-banner' class='onboarding-showcase-card' aria-labelledby='onboarding-heading'>
-				<div class='onboarding-header-bar'>
-					<div class='onboarding-title-group'>
-						<span class='onboarding-eyebrow'>Willkommen im Drehbuch-Studio</span>
-						<h2 id='onboarding-heading' class='onboarding-main-title'>In 3 Schritten von der Idee zum fertigen Film-Skript</h2>
+			<div class='dashboard-welcome-header'>
+				<div class='dashboard-welcome-text'>
+					<h1 class='dashboard-heading'>Deine Drehbücher</h1>
+					<p class='dashboard-subheading'>Wähle ein Skript zum Weiterarbeiten oder beginne ein neues Filmprojekt.</p>
+				</div>
+
+				<div class='dashboard-controls-bar'>
+					<div class='search-input-wrapper'>
+						<span data-icon-name='search' class='icon-slot search-field-icon'></span>
+						<input type='search' id='dashboard-search-field' class='input-control search-field-input' placeholder='Nach Titel oder Person suchen...' aria-label='Drehbücher durchsuchen'>
 					</div>
-					<button type='button' id='dismiss-onboarding-guide-button' class='button-secondary'>
-						<span>Anleitung ausblenden</span>
-						<span data-icon-name='close' class='icon-slot'></span>
-					</button>
-				</div>
 
-				<div class='onboarding-steps-grid'>
-					<article class='onboarding-step-card'>
-						<figure class='onboarding-image-frame'>
-							<img src='' alt='Vorschau: KI-Text oder LaTeX-Skript per Copy-and-Paste einfügen' class='onboarding-custom-image is-hidden' data-onboarding-image-slot='step-one'>
-							<div class='onboarding-vector-fallback' data-illustration-slot='stepOneIllustration'></div>
-						</figure>
-						<div class='onboarding-step-body'>
-							<span class='step-number-badge'>Schritt 1</span>
-							<h3 class='onboarding-step-title'>Schreiben oder KI-Text einfügen</h3>
-							<p class='onboarding-step-text'>Tippe direkt auf dem Blatt oder füge komplette Szenen aus ChatGPT, Claude oder bestehendem LaTeX-Code per Klick ein.</p>
-						</div>
-					</article>
+					<div class='sorting-controls-group'>
+						<label for='dashboard-sort-criterion' class='control-inline-label'>Sortierung:</label>
+						<select id='dashboard-sort-criterion' class='select-control'>
+							<option value='modificationTimestamp'>Zuletzt bearbeitet</option>
+							<option value='creationTimestamp'>Erstellungsdatum</option>
+							<option value='title'>Alphabetisch</option>
+						</select>
 
-					<article class='onboarding-step-card'>
-						<figure class='onboarding-image-frame'>
-							<img src='' alt='Vorschau: Bausteine für Szene, Handlung und Dialog auswählen' class='onboarding-custom-image is-hidden' data-onboarding-image-slot='step-two'>
-							<div class='onboarding-vector-fallback' data-illustration-slot='stepTwoIllustration'></div>
-						</figure>
-						<div class='onboarding-step-body'>
-							<span class='step-number-badge'>Schritt 2</span>
-							<h3 class='onboarding-step-title'>Bausteine statt Formatierungs-Stress</h3>
-							<p class='onboarding-step-text'>Wähle einfach zwischen Szene, Handlung, Dialog und Übergang. Einrückungen, Klammern und Großbuchstaben übernimmt das Tool.</p>
-						</div>
-					</article>
-
-					<article class='onboarding-step-card'>
-						<figure class='onboarding-image-frame'>
-							<img src='' alt='Vorschau: Mit einem Klick als PDF drucken oder an Overleaf senden' class='onboarding-custom-image is-hidden' data-onboarding-image-slot='step-three'>
-							<div class='onboarding-vector-fallback' data-illustration-slot='stepThreeIllustration'></div>
-						</figure>
-						<div class='onboarding-step-body'>
-							<span class='step-number-badge'>Schritt 3</span>
-							<h3 class='onboarding-step-title'>Ein-Klick-PDF &amp; Overleaf</h3>
-							<p class='onboarding-step-text'>Öffne das fertige Skript ohne Datei-Upload direkt in Overleaf oder speichere es sofort im Browser als normgerechtes PDF.</p>
-						</div>
-					</article>
-				</div>
-			</aside>
-
-			<div class='dashboard-controls-bar'>
-				<div class='search-input-wrapper'>
-					<span data-icon-name='search' class='icon-slot search-field-icon'></span>
-					<input type='search' id='dashboard-search-field' class='input-control search-field-input' placeholder='Drehbuch oder Autor suchen...' aria-label='Drehbücher durchsuchen'>
-				</div>
-
-				<div class='sorting-controls-group'>
-					<label for='dashboard-sort-criterion' class='control-inline-label'>Sortieren:</label>
-					<select id='dashboard-sort-criterion' class='select-control'>
-						<option value='modificationTimestamp'>Bearbeitungsdatum</option>
-						<option value='creationTimestamp'>Erstellungsdatum</option>
-						<option value='title'>Name</option>
-					</select>
-
-					<button type='button' id='dashboard-sort-direction-button' class='button-secondary' aria-label='Sortierreihenfolge umkehren'>
-						<span data-icon-name='sortDescending' id='sort-direction-icon-slot' class='icon-slot'></span>
-						<span id='sort-direction-label-text'>Absteigend</span>
-					</button>
-
-					<div class='relative-dropdown-anchor'>
-						<button type='button' id='toggle-backup-dropdown-button' class='button-icon-square' aria-haspopup='true' aria-expanded='false' aria-label='Backup-Optionen öffnen' title='Alle Projekte sichern oder laden'>
-							<span data-icon-name='moreHorizontal' class='icon-slot'></span>
+						<button type='button' id='dashboard-sort-direction-button' class='button-secondary' aria-label='Sortierreihenfolge umkehren'>
+							<span data-icon-name='sortDescending' id='sort-direction-icon-slot' class='icon-slot'></span>
+							<span id='sort-direction-label-text' class='hide-on-small-mobile'>Absteigend</span>
 						</button>
-						<div id='backup-dropdown-menu' class='floating-dropdown-menu is-hidden' role='menu'>
-							<button type='button' id='export-all-backup-button' class='dropdown-action-item' role='menuitem'>
-								<span data-icon-name='download' class='icon-slot'></span>
-								<span>Kurs-Backup speichern (.json)</span>
+
+						<div class='relative-dropdown-anchor'>
+							<button type='button' id='toggle-backup-dropdown-button' class='button-icon-square' aria-haspopup='true' aria-expanded='false' aria-label='Sicherung verwalten' title='Alle Drehbücher sichern oder laden'>
+								<span data-icon-name='moreHorizontal' class='icon-slot'></span>
 							</button>
-							<label for='import-all-backup-input' class='dropdown-action-item file-trigger-label' role='menuitem' tabindex='0'>
-								<span data-icon-name='upload' class='icon-slot'></span>
-								<span>Kurs-Backup einlesen (.json)</span>
-							</label>
-							<input type='file' id='import-all-backup-input' class='visually-hidden' accept='application/json'>
+							<div id='backup-dropdown-menu' class='floating-dropdown-menu is-hidden' role='menu'>
+								<button type='button' id='export-all-backup-button' class='dropdown-action-item' role='menuitem'>
+									<span data-icon-name='download' class='icon-slot'></span>
+									<span>Sammlung sichern (.json)</span>
+								</button>
+								<label for='import-all-backup-input' class='dropdown-action-item file-trigger-label' role='menuitem' tabindex='0'>
+									<span data-icon-name='upload' class='icon-slot'></span>
+									<span>Sammlung einlesen (.json)</span>
+								</label>
+								<input type='file' id='import-all-backup-input' class='visually-hidden' accept='application/json'>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -173,27 +127,27 @@
 
 			<div class='screenplay-page-sheet'>
 				<header class='manuscript-header-zone no-print'>
-					<input type='text' id='editor-title-field' class='manuscript-title-field' placeholder='TITEL DES DREHBUCHS' aria-label='Titel des Drehbuchs'>
+					<input type='text' id='editor-title-field' class='manuscript-title-field' placeholder='Titel deines Drehbuchs' aria-label='Titel des Drehbuchs'>
 
 					<div class='manuscript-byline-row'>
-						<span class='byline-word'>von</span>
-						<input type='text' id='editor-author-field' class='manuscript-author-field' placeholder='Name der Autorin / des Autors' aria-label='Autor'>
+						<span class='byline-word'>geschrieben von</span>
+						<input type='text' id='editor-author-field' class='manuscript-author-field' placeholder='Dein Name' aria-label='Autorin oder Autor'>
 						<button type='button' id='toggle-cover-settings-button' class='button-subtle-link' aria-expanded='false' aria-controls='cover-settings-panel'>
 							<span data-icon-name='sliders' class='icon-slot'></span>
-							<span>Deckblatt &amp; Adresse</span>
+							<span>Deckblatt &amp; Extras</span>
 						</button>
 					</div>
 
 					<div id='cover-settings-panel' class='cover-settings-panel is-hidden'>
 						<div class='settings-field-column'>
-							<label for='editor-address-field' class='settings-field-label'>Kontaktadresse / Kurs / Fassung (jede Zeile wird im LaTeX-Deckblatt automatisch mit <code>\\</code> getrennt)</label>
-							<textarea id='editor-address-field' class='textarea-control address-textarea' rows='3' placeholder='555 George St NNW&#10;Kaplan, ND 77777&#10;Projektkurs Filmgestaltung'></textarea>
+							<label for='editor-address-field' class='settings-field-label'>Kontaktangaben oder Kursnotiz auf dem Deckblatt (jede Zeile steht einzeln untereinander)</label>
+							<textarea id='editor-address-field' class='textarea-control address-textarea' rows='3' placeholder='Max Mustermann&#10;Musterstraße 12&#10;Projektkurs Film'></textarea>
 						</div>
 
 						<div class='settings-checkboxes-grid'>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-coverpage-checkbox'>
-								<span>Deckblatt erzeugen (<code>\coverpage</code>)</span>
+								<span>Eigenes Deckblatt voranstellen</span>
 							</label>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-fadein-checkbox'>
@@ -201,7 +155,7 @@
 							</label>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-fadeout-checkbox'>
-								<span>Mit <strong>FADE OUT.</strong> enden</span>
+								<span>Mit <strong>FADE OUT.</strong> ausblenden</span>
 							</label>
 							<label class='checkbox-option-label'>
 								<input type='checkbox' id='setting-theend-checkbox'>
@@ -219,20 +173,20 @@
 				<div id='the-end-print-marker' class='manuscript-static-marker marker-center'>THE END</div>
 
 				<footer class='manuscript-bottom-toolbar no-print' role='toolbar' aria-label='Neuen Baustein am Ende einfügen'>
-					<span class='toolbar-caption'>Am Ende anfügen:</span>
-					<button type='button' class='button-pill-add' data-append-block-type='scene_heading'>
+					<span class='toolbar-caption'>Neuen Abschnitt anfügen:</span>
+					<button type='button' class='button-pill-add pill-add-scene' data-append-block-type='scene_heading'>
 						<span data-icon-name='plus' class='icon-slot'></span>
-						<span>Szene (INT./EXT.)</span>
+						<span>Szene</span>
 					</button>
-					<button type='button' class='button-pill-add' data-append-block-type='action'>
+					<button type='button' class='button-pill-add pill-add-action' data-append-block-type='action'>
 						<span data-icon-name='plus' class='icon-slot'></span>
 						<span>Handlung</span>
 					</button>
-					<button type='button' class='button-pill-add' data-append-block-type='dialogue'>
+					<button type='button' class='button-pill-add pill-add-dialogue' data-append-block-type='dialogue'>
 						<span data-icon-name='plus' class='icon-slot'></span>
 						<span>Dialog</span>
 					</button>
-					<button type='button' class='button-pill-add' data-append-block-type='transition'>
+					<button type='button' class='button-pill-add pill-add-transition' data-append-block-type='transition'>
 						<span data-icon-name='plus' class='icon-slot'></span>
 						<span>Übergang</span>
 					</button>
@@ -241,39 +195,98 @@
 		</section>
 	</main>
 
+	<dialog id='onboarding-guide-modal' class='modal-overlay-dialog guide-modal-dialog no-print' aria-labelledby='onboarding-heading'>
+		<div class='modal-card-surface guide-modal-surface'>
+			<div class='onboarding-header-bar'>
+				<div class='onboarding-title-group'>
+					<span class='onboarding-eyebrow'>Kurzanleitung</span>
+					<h2 id='onboarding-heading' class='onboarding-main-title'>So entsteht dein Drehbuch in 3 einfachen Schritten</h2>
+				</div>
+				<button type='button' id='close-onboarding-guide-button' class='button-icon-square' aria-label='Anleitung schließen'>
+					<span data-icon-name='close' class='icon-slot'></span>
+				</button>
+			</div>
+
+			<div class='onboarding-steps-list'>
+				<article class='onboarding-step-card'>
+					<figure class='onboarding-image-frame'>
+						<img src='' alt='Screenshot zu Schritt 1: Ideen frei tippen oder KI-Szenen einfügen' class='onboarding-custom-image is-hidden' data-onboarding-image-slot='step-one'>
+						<div class='onboarding-vector-fallback' data-illustration-slot='stepOneIllustration'></div>
+					</figure>
+					<div class='onboarding-step-body'>
+						<span class='step-number-badge badge-pastel-peach'>Schritt 1</span>
+						<h3 class='onboarding-step-title'>Drauflosschreiben oder KI-Text einfügen</h3>
+						<p class='onboarding-step-text'>Tippe deine Geschichte direkt auf das warme Manuskriptblatt oder kopiere fertige Szenen aus deinem KI-Chat über den Button „Text / KI-Szene einfügen“ direkt ins Dokument.</p>
+					</div>
+				</article>
+
+				<article class='onboarding-step-card'>
+					<figure class='onboarding-image-frame'>
+						<img src='' alt='Screenshot zu Schritt 2: Farbige Bausteine für Szene, Handlung und Dialog wählen' class='onboarding-custom-image is-hidden' data-onboarding-image-slot='step-two'>
+						<div class='onboarding-vector-fallback' data-illustration-slot='stepTwoIllustration'></div>
+					</figure>
+					<div class='onboarding-step-body'>
+						<span class='step-number-badge badge-pastel-sage'>Schritt 2</span>
+						<h3 class='onboarding-step-title'>Sanfte Bausteine statt Formatierungs-Stress</h3>
+						<p class='onboarding-step-text'>Wähle einfach zwischen Szene, Handlung, Dialog und Übergang. Alle Einrückungen, Großbuchstaben und Regieklammern erledigt ScriptBridge automatisch im Hintergrund.</p>
+					</div>
+				</article>
+
+				<article class='onboarding-step-card'>
+					<figure class='onboarding-image-frame'>
+						<img src='' alt='Screenshot zu Schritt 3: Sofort als PDF drucken oder in Overleaf öffnen' class='onboarding-custom-image is-hidden' data-onboarding-image-slot='step-three'>
+						<div class='onboarding-vector-fallback' data-illustration-slot='stepThreeIllustration'></div>
+					</figure>
+					<div class='onboarding-step-body'>
+						<span class='step-number-badge badge-pastel-lavender'>Schritt 3</span>
+						<h3 class='onboarding-step-title'>Mit einem Klick zum fertigen Film-Skript</h3>
+						<p class='onboarding-step-text'>Speichere dein Werk jederzeit direkt über „Als PDF drucken“ oder öffne das fertig gesetzte Drehbuch mit nur einem Klick in Overleaf.</p>
+					</div>
+				</article>
+			</div>
+
+			<div class='guide-modal-footer'>
+				<button type='button' id='dismiss-onboarding-guide-button' class='button-primary'>
+					<span data-icon-name='check' class='icon-slot'></span>
+					<span>Alles klar, los geht’s!</span>
+				</button>
+			</div>
+		</div>
+	</dialog>
+
 	<dialog id='import-script-modal' class='modal-overlay-dialog no-print' aria-labelledby='import-modal-title'>
 		<div class='modal-card-surface'>
 			<div class='modal-header-row'>
-				<h2 id='import-modal-title' class='modal-heading-text'>KI-Szene oder LaTeX-Skript einfügen</h2>
+				<h2 id='import-modal-title' class='modal-heading-text'>Szene oder Skript-Text einfügen</h2>
 				<button type='button' id='close-import-modal-button' class='button-icon-square' aria-label='Fenster schließen'>
 					<span data-icon-name='close' class='icon-slot'></span>
 				</button>
 			</div>
 
 			<p class='modal-explanation-text'>
-				Füge entweder eine Szene aus ChatGPT/Claude <strong>oder</strong> kompletten <code>\documentclass{screenplay}</code>-LaTeX-Code ein. Das System erkennt beides automatisch.
+				Kopiere eine Szene aus ChatGPT, Claude oder bestehenden LaTeX-Code hier hinein. Wir wandeln deinen Text automatisch in passende Drehbuch-Bausteine um.
 			</p>
 
 			<div class='ai-prompt-helper-box'>
-				<span>Vorlage für deinen KI-Chat benötigt?</span>
+				<span>Du möchtest dir eine Szene von einer KI schreiben lassen?</span>
 				<button type='button' id='copy-ai-prompt-template-button' class='button-subtle-link'>
 					<span data-icon-name='copy' class='icon-slot'></span>
-					<span>Optimale KI-Anweisung kopieren</span>
+					<span>Passende KI-Vorlage kopieren</span>
 				</button>
 			</div>
 
-			<textarea id='import-raw-source-textarea' class='textarea-control import-source-textarea' rows='10' placeholder='\intslug[day]{Driskill Hotel Seminar Room}&#10;&#10;JOE and APRIL burst through the doors...&#10;&#10;\begin{dialogue}[looking about]{Joe}&#10;Are we in time?&#10;\end{dialogue}' aria-label='Einzufügender Drehbuch- oder LaTeX-Text'></textarea>
+			<textarea id='import-raw-source-textarea' class='textarea-control import-source-textarea' rows='9' placeholder='INT. CAFÉ AM MORGEN - DAY&#10;&#10;LINA rührt gedankenverloren in ihrem Kakao...&#10;&#10;LINA (leise)&#10;Glaubst du, sie haben uns bemerkt?' aria-label='Einzufügender Drehbuch- oder LaTeX-Text'></textarea>
 
 			<div class='modal-footer-actions'>
 				<label class='checkbox-option-label'>
 					<input type='checkbox' id='replace-existing-blocks-checkbox'>
-					<span>Bestehende Abschnitte im aktuellen Dokument ersetzen</span>
+					<span>Bisherigen Inhalt im aktuellen Drehbuch komplett ersetzen</span>
 				</label>
 				<div class='modal-buttons-group'>
 					<button type='button' id='cancel-import-modal-button' class='button-secondary'>Abbrechen</button>
 					<button type='button' id='confirm-import-modal-button' class='button-primary'>
 						<span data-icon-name='check' class='icon-slot'></span>
-						<span>Jetzt importieren</span>
+						<span>In Drehbuch übernehmen</span>
 					</button>
 				</div>
 			</div>

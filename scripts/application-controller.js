@@ -26,10 +26,8 @@ import {
 	generateUniqueIdentifier,
 	loadDocumentsFromStorage,
 	loadOnboardingHiddenFlag,
-	loadThemeFromStorage,
 	saveDocumentsToStorage,
 	saveOnboardingHiddenFlag,
-	saveThemeToStorage,
 	submitScreenplayToOverleaf,
 	triggerBrowserFileDownload
 } from './storage-gateway.js';
@@ -41,8 +39,7 @@ const applicationState = {
 	sortCriterion: 'modificationTimestamp',
 	sortDirection: 'descending',
 	openCardMenuIdentifier: null,
-	isOnboardingHidden: false,
-	themeMode: 'system'
+	isOnboardingHidden: false
 };
 
 function showToastNotification(messageText) {
@@ -70,6 +67,14 @@ function executeSafely(operationCallback) {
 	}
 }
 
+function revealCustomScreenshotImage(imageElement) {
+	imageElement.classList.remove('is-hidden');
+	const siblingFallback = imageElement.parentElement.querySelector('.onboarding-vector-fallback');
+	if (siblingFallback !== null) {
+		siblingFallback.classList.add('is-hidden');
+	}
+}
+
 function hydrateStaticIconsAndIllustrations() {
 	const iconSlots = document.querySelectorAll('[data-icon-name]');
 	for (const slotElement of iconSlots) {
@@ -87,13 +92,13 @@ function hydrateStaticIconsAndIllustrations() {
 	for (const imageElement of customImages) {
 		const sourceAttribute = imageElement.getAttribute('src');
 		if (sourceAttribute && sourceAttribute.trim().length > 0) {
-			imageElement.addEventListener('load', function onImageLoaded() {
-				imageElement.classList.remove('is-hidden');
-				const siblingFallback = imageElement.parentElement.querySelector('.onboarding-vector-fallback');
-				if (siblingFallback) {
-					siblingFallback.classList.add('is-hidden');
-				}
-			});
+			if (imageElement.complete && imageElement.naturalWidth > 0) {
+				revealCustomScreenshotImage(imageElement);
+			} else {
+				imageElement.addEventListener('load', function onImageLoaded() {
+					revealCustomScreenshotImage(imageElement);
+				});
+			}
 		}
 	}
 }
@@ -103,7 +108,9 @@ function adjustTextareaHeightAutomatically(textareaElement) {
 		return;
 	}
 	textareaElement.style.height = 'auto';
-	textareaElement.style.height = String(textareaElement.scrollHeight) + 'px';
+	const rootFontSizePixels = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+	const heightInRem = textareaElement.scrollHeight / rootFontSizePixels;
+	textareaElement.style.height = String(heightInRem) + 'rem';
 }
 
 function adjustAllVisibleTextareas() {
@@ -157,26 +164,23 @@ function saveAndTouchActiveDocument(activeDocument) {
 	saveDocumentsToStorage(applicationState.documents);
 	const statusBadge = document.getElementById('save-status-text');
 	if (statusBadge !== null && activeDocument !== null) {
-		statusBadge.textContent = 'Gespeichert: ' + formatIsoTimestampReadable(activeDocument.modificationTimestamp);
+		statusBadge.textContent = 'Gespeichert • ' + formatIsoTimestampReadable(activeDocument.modificationTimestamp);
 	}
 }
 
-function applyThemePreference(themeMode) {
-	applicationState.themeMode = themeMode;
-	document.documentElement.setAttribute('data-theme', themeMode);
-	saveThemeToStorage(themeMode);
+function openOnboardingGuideModal() {
+	const guideModalDialog = document.getElementById('onboarding-guide-modal');
+	if (guideModalDialog !== null && !guideModalDialog.open) {
+		guideModalDialog.showModal();
+	}
 }
 
-function updateOnboardingVisibility(isHiddenBoolean) {
-	applicationState.isOnboardingHidden = isHiddenBoolean;
-	saveOnboardingHiddenFlag(isHiddenBoolean);
-	const onboardingBanner = document.getElementById('onboarding-guide-banner');
-	const showGuideButton = document.getElementById('show-onboarding-guide-button');
-	if (onboardingBanner !== null) {
-		onboardingBanner.classList.toggle('is-hidden', isHiddenBoolean);
-	}
-	if (showGuideButton !== null) {
-		showGuideButton.classList.toggle('is-hidden', !isHiddenBoolean);
+function closeOnboardingGuideModalAndRemember() {
+	applicationState.isOnboardingHidden = true;
+	saveOnboardingHiddenFlag(true);
+	const guideModalDialog = document.getElementById('onboarding-guide-modal');
+	if (guideModalDialog !== null && guideModalDialog.open) {
+		guideModalDialog.close();
 	}
 }
 
@@ -204,7 +208,7 @@ function createNewDocumentGridCard() {
 	titleSpan.textContent = 'Neues Drehbuch';
 	const subtitleSpan = document.createElement('span');
 	subtitleSpan.className = 'sheet-document-date';
-	subtitleSpan.textContent = 'Leeres Skript anlegen';
+	subtitleSpan.textContent = 'Frisches Blatt aufschlagen';
 	labelGroup.appendChild(titleSpan);
 	labelGroup.appendChild(subtitleSpan);
 
@@ -214,7 +218,7 @@ function createNewDocumentGridCard() {
 	return itemWrapper;
 }
 
-function createExistingDocumentGridCard(documentRecord) {
+function createExistingDocumentGridCard(documentRecord, cardIndex) {
 	const sceneCountText = countScenesInDocument(documentRecord);
 	const itemWrapper = document.createElement('div');
 	itemWrapper.className = 'document-grid-item';
@@ -228,6 +232,11 @@ function createExistingDocumentGridCard(documentRecord) {
 
 	const thumbnailSurface = document.createElement('div');
 	thumbnailSurface.className = 'sheet-thumbnail-surface';
+
+	const pastelBand = document.createElement('span');
+	pastelBand.className = 'sheet-pastel-band pastel-band-' + String(cardIndex % 4);
+	pastelBand.setAttribute('aria-hidden', 'true');
+	thumbnailSurface.appendChild(pastelBand);
 
 	const linesPreview = document.createElement('div');
 	linesPreview.className = 'thumbnail-script-lines';
@@ -261,7 +270,7 @@ function createExistingDocumentGridCard(documentRecord) {
 	const dateSpan = document.createElement('span');
 	dateSpan.className = 'sheet-document-date';
 	dateSpan.textContent = applicationState.sortCriterion === 'creationTimestamp'
-		? 'Erstellt: ' + formatIsoTimestampReadable(documentRecord.creationTimestamp)
+		? 'Erstellt am ' + formatIsoTimestampReadable(documentRecord.creationTimestamp)
 		: formatIsoTimestampReadable(documentRecord.modificationTimestamp);
 
 	labelGroup.appendChild(titleSpan);
@@ -275,7 +284,7 @@ function createExistingDocumentGridCard(documentRecord) {
 	menuTriggerButton.className = 'card-context-menu-button';
 	menuTriggerButton.setAttribute('data-dashboard-action', 'toggle-card-menu');
 	menuTriggerButton.setAttribute('data-document-identifier', documentRecord.identifier);
-	menuTriggerButton.setAttribute('aria-label', 'Aktionen für ' + (documentRecord.title || 'Drehbuch'));
+	menuTriggerButton.setAttribute('aria-label', 'Optionen für ' + (documentRecord.title || 'Drehbuch'));
 	const isMenuOpen = applicationState.openCardMenuIdentifier === documentRecord.identifier;
 	menuTriggerButton.setAttribute('aria-expanded', String(isMenuOpen));
 	menuTriggerButton.appendChild(createIconSpanElement('moreHorizontal'));
@@ -295,7 +304,7 @@ function createExistingDocumentGridCard(documentRecord) {
 		duplicateAction.setAttribute('data-document-identifier', documentRecord.identifier);
 		duplicateAction.appendChild(createIconSpanElement('copy'));
 		const duplicateText = document.createElement('span');
-		duplicateText.textContent = 'Duplizieren';
+		duplicateText.textContent = 'Kopie anlegen';
 		duplicateAction.appendChild(duplicateText);
 
 		const downloadTexAction = document.createElement('button');
@@ -315,7 +324,7 @@ function createExistingDocumentGridCard(documentRecord) {
 		deleteAction.setAttribute('data-document-identifier', documentRecord.identifier);
 		deleteAction.appendChild(createIconSpanElement('trash'));
 		const deleteText = document.createElement('span');
-		deleteText.textContent = 'Löschen';
+		deleteText.textContent = 'Drehbuch löschen';
 		deleteAction.appendChild(deleteText);
 
 		dropdownMenu.appendChild(duplicateAction);
@@ -325,6 +334,25 @@ function createExistingDocumentGridCard(documentRecord) {
 	}
 
 	return itemWrapper;
+}
+
+function createEmptySearchNoticeCard() {
+	const noticeWrapper = document.createElement('div');
+	noticeWrapper.className = 'empty-search-state-card';
+
+	const headingElement = document.createElement('p');
+	headingElement.className = 'sheet-document-title';
+	headingElement.textContent = 'Kein passendes Drehbuch gefunden';
+
+	const resetButton = document.createElement('button');
+	resetButton.type = 'button';
+	resetButton.className = 'button-subtle-link';
+	resetButton.setAttribute('data-dashboard-action', 'clear-search');
+	resetButton.textContent = 'Suche zurücksetzen';
+
+	noticeWrapper.appendChild(headingElement);
+	noticeWrapper.appendChild(resetButton);
+	return noticeWrapper;
 }
 
 function renderDashboardDocumentGrid() {
@@ -342,8 +370,13 @@ function renderDashboardDocumentGrid() {
 		applicationState.sortDirection
 	);
 
-	for (const documentItem of visibleDocuments) {
-		gridContainer.appendChild(createExistingDocumentGridCard(documentItem));
+	if (visibleDocuments.length === 0 && applicationState.searchQuery.trim().length > 0) {
+		gridContainer.appendChild(createEmptySearchNoticeCard());
+		return;
+	}
+
+	for (let index = 0; index < visibleDocuments.length; index += 1) {
+		gridContainer.appendChild(createExistingDocumentGridCard(visibleDocuments[index], index));
 	}
 }
 
@@ -375,15 +408,15 @@ function buildSceneHeadingDom(blockItem) {
 		['INTEXT', 'INT./EXT.'],
 		['EXTINT', 'EXT./INT.']
 	];
-	for (const [envCode, envLabel] of environmentOptions) {
-		prefixSelect.appendChild(new Option(envLabel, envCode));
+	for (const [environmentCode, environmentLabel] of environmentOptions) {
+		prefixSelect.appendChild(new Option(environmentLabel, environmentCode));
 	}
 	prefixSelect.value = blockItem.environment || 'INT';
 
 	const locationField = document.createElement('input');
 	locationField.type = 'text';
 	locationField.className = 'slugline-location-field';
-	locationField.placeholder = 'SCHAUPLATZ (Z. B. SEMINAR ROOM)';
+	locationField.placeholder = 'ORT DER SZENE (Z. B. HOTELHALLE)';
 	locationField.value = blockItem.location || '';
 	locationField.setAttribute('data-field-key', 'location');
 	locationField.setAttribute('aria-label', 'Schauplatz');
@@ -412,7 +445,7 @@ function buildActionDom(blockItem) {
 	const actionTextarea = document.createElement('textarea');
 	actionTextarea.className = 'auto-expanding-textarea';
 	actionTextarea.rows = 1;
-	actionTextarea.placeholder = 'Handlung beschreiben...';
+	actionTextarea.placeholder = 'Was passiert in dieser Szene?';
 	actionTextarea.value = blockItem.content || '';
 	actionTextarea.setAttribute('data-field-key', 'content');
 	actionTextarea.setAttribute('aria-label', 'Handlung');
@@ -430,7 +463,7 @@ function buildDialogueDom(blockItem) {
 	speakerInput.type = 'text';
 	speakerInput.className = 'dialogue-character-field';
 	speakerInput.setAttribute('list', 'known-characters-datalist');
-	speakerInput.placeholder = 'FIGURENNAME';
+	speakerInput.placeholder = 'NAME DER FIGUR';
 	speakerInput.value = blockItem.speaker || '';
 	speakerInput.setAttribute('data-field-key', 'speaker');
 	speakerInput.setAttribute('aria-label', 'Sprechende Figur');
@@ -444,29 +477,29 @@ function buildDialogueDom(blockItem) {
 		segmentRow.className = 'dialogue-segment-row';
 
 		if (segmentItem.segmentType === 'parenthetical') {
-			const parenBox = document.createElement('div');
-			parenBox.className = 'parenthetical-line-box';
-			const leftParen = document.createElement('span');
-			leftParen.className = 'paren-symbol';
-			leftParen.textContent = '(';
-			const parenTextarea = document.createElement('textarea');
-			parenTextarea.className = 'auto-expanding-textarea';
-			parenTextarea.rows = 1;
-			parenTextarea.placeholder = 'Regieanweisung / continuing';
-			parenTextarea.value = segmentItem.text || '';
-			parenTextarea.setAttribute('data-segment-identifier', segmentItem.identifier);
-			const rightParen = document.createElement('span');
-			rightParen.className = 'paren-symbol';
-			rightParen.textContent = ')';
-			parenBox.appendChild(leftParen);
-			parenBox.appendChild(parenTextarea);
-			parenBox.appendChild(rightParen);
-			segmentRow.appendChild(parenBox);
+			const parentheticalContainer = document.createElement('div');
+			parentheticalContainer.className = 'parenthetical-line-box';
+			const openingParenthesisSpan = document.createElement('span');
+			openingParenthesisSpan.className = 'paren-symbol';
+			openingParenthesisSpan.textContent = '(';
+			const parentheticalTextarea = document.createElement('textarea');
+			parentheticalTextarea.className = 'auto-expanding-textarea';
+			parentheticalTextarea.rows = 1;
+			parentheticalTextarea.placeholder = 'Tonfall oder kleine Geste';
+			parentheticalTextarea.value = segmentItem.text || '';
+			parentheticalTextarea.setAttribute('data-segment-identifier', segmentItem.identifier);
+			const closingParenthesisSpan = document.createElement('span');
+			closingParenthesisSpan.className = 'paren-symbol';
+			closingParenthesisSpan.textContent = ')';
+			parentheticalContainer.appendChild(openingParenthesisSpan);
+			parentheticalContainer.appendChild(parentheticalTextarea);
+			parentheticalContainer.appendChild(closingParenthesisSpan);
+			segmentRow.appendChild(parentheticalContainer);
 		} else {
 			const speechTextarea = document.createElement('textarea');
 			speechTextarea.className = 'auto-expanding-textarea';
 			speechTextarea.rows = 1;
-			speechTextarea.placeholder = 'Gesprochener Dialogtext...';
+			speechTextarea.placeholder = 'Was sagt die Figur?';
 			speechTextarea.value = segmentItem.text || '';
 			speechTextarea.setAttribute('data-segment-identifier', segmentItem.identifier);
 			segmentRow.appendChild(speechTextarea);
@@ -478,7 +511,7 @@ function buildDialogueDom(blockItem) {
 			removeSegmentButton.className = 'segment-delete-icon-button';
 			removeSegmentButton.setAttribute('data-block-command', 'delete-segment');
 			removeSegmentButton.setAttribute('data-segment-identifier', segmentItem.identifier);
-			removeSegmentButton.setAttribute('aria-label', 'Dialogzeile entfernen');
+			removeSegmentButton.setAttribute('aria-label', 'Zeile entfernen');
 			removeSegmentButton.appendChild(createIconSpanElement('close'));
 			segmentRow.appendChild(removeSegmentButton);
 		}
@@ -494,9 +527,9 @@ function buildDialogueDom(blockItem) {
 	addParentheticalButton.className = 'button-subtle-link';
 	addParentheticalButton.setAttribute('data-block-command', 'add-parenthetical');
 	addParentheticalButton.appendChild(createIconSpanElement('plus'));
-	const parenLabel = document.createElement('span');
-	parenLabel.textContent = 'Regieanweisung in Klammern';
-	addParentheticalButton.appendChild(parenLabel);
+	const parentheticalLabel = document.createElement('span');
+	parentheticalLabel.textContent = 'Tonfall / Regie';
+	addParentheticalButton.appendChild(parentheticalLabel);
 
 	const addSpeechButton = document.createElement('button');
 	addSpeechButton.type = 'button';
@@ -521,7 +554,7 @@ function buildTransitionDom(blockItem) {
 	const selectControl = document.createElement('select');
 	selectControl.className = 'transition-choice-select';
 	selectControl.setAttribute('data-field-key', 'transitionType');
-	selectControl.setAttribute('aria-label', 'Übergang');
+	selectControl.setAttribute('aria-label', 'Szenenübergang');
 	const transitionOptions = [
 		'CUT TO:',
 		'DISSOLVE TO:',
@@ -550,11 +583,11 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	leftCluster.className = 'toolbar-left-cluster';
 
 	const typeSelect = document.createElement('select');
-	typeSelect.className = 'block-type-select-pill';
+	typeSelect.className = 'block-type-select-pill block-type-pill-' + String(blockItem.type);
 	typeSelect.setAttribute('data-block-command', 'change-type');
-	typeSelect.setAttribute('aria-label', 'Baustein-Typ ändern');
+	typeSelect.setAttribute('aria-label', 'Abschnitts-Art ändern');
 	const blockTypes = [
-		['scene_heading', 'Szene (INT./EXT.)'],
+		['scene_heading', 'Szene'],
 		['action', 'Handlung'],
 		['dialogue', 'Dialog'],
 		['transition', 'Übergang']
@@ -569,7 +602,7 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	moveUpButton.className = 'block-tool-button';
 	moveUpButton.setAttribute('data-block-command', 'move-up');
 	moveUpButton.disabled = blockIndex === 0;
-	moveUpButton.setAttribute('aria-label', 'Nach oben schieben');
+	moveUpButton.setAttribute('aria-label', 'Nach oben verschieben');
 	moveUpButton.appendChild(createIconSpanElement('arrowUp'));
 
 	const moveDownButton = document.createElement('button');
@@ -577,7 +610,7 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	moveDownButton.className = 'block-tool-button';
 	moveDownButton.setAttribute('data-block-command', 'move-down');
 	moveDownButton.disabled = blockIndex === totalBlockCount - 1;
-	moveDownButton.setAttribute('aria-label', 'Nach unten schieben');
+	moveDownButton.setAttribute('aria-label', 'Nach unten verschieben');
 	moveDownButton.appendChild(createIconSpanElement('arrowDown'));
 
 	const insertBelowButton = document.createElement('button');
@@ -586,7 +619,7 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	insertBelowButton.setAttribute('data-block-command', 'insert-below');
 	insertBelowButton.appendChild(createIconSpanElement('plus'));
 	const insertLabel = document.createElement('span');
-	insertLabel.textContent = 'Darunter';
+	insertLabel.textContent = 'Darunter einfügen';
 	insertBelowButton.appendChild(insertLabel);
 
 	leftCluster.appendChild(typeSelect);
@@ -601,7 +634,7 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	deleteBlockButton.type = 'button';
 	deleteBlockButton.className = 'block-tool-button block-tool-danger';
 	deleteBlockButton.setAttribute('data-block-command', 'delete-block');
-	deleteBlockButton.setAttribute('aria-label', 'Abschnitt löschen');
+	deleteBlockButton.setAttribute('aria-label', 'Abschnitt entfernen');
 	deleteBlockButton.appendChild(createIconSpanElement('trash'));
 
 	rightCluster.appendChild(deleteBlockButton);
@@ -622,7 +655,31 @@ function createManuscriptBlockNode(blockItem, blockIndex, totalBlockCount) {
 	return articleNode;
 }
 
-function renderManuscriptBlocksStream(activeDocument) {
+function focusPrimaryInputInsideBlock(blockIdentifier, optionalSegmentIdentifier) {
+	const streamContainer = document.getElementById('manuscript-blocks-list');
+	if (streamContainer === null || !blockIdentifier) {
+		return;
+	}
+	const blockNode = streamContainer.querySelector('[data-block-identifier=\'' + blockIdentifier + '\']');
+	if (blockNode === null) {
+		return;
+	}
+	if (optionalSegmentIdentifier) {
+		const segmentField = blockNode.querySelector('[data-segment-identifier=\'' + optionalSegmentIdentifier + '\']');
+		if (segmentField !== null) {
+			segmentField.focus();
+			return;
+		}
+	}
+	const primaryInput = blockNode.querySelector(
+		'.slugline-location-field, .auto-expanding-textarea, .dialogue-character-field, .transition-choice-select'
+	);
+	if (primaryInput !== null) {
+		primaryInput.focus();
+	}
+}
+
+function renderManuscriptBlocksStream(activeDocument, focusBlockIdentifier, focusSegmentIdentifier) {
 	const streamContainer = document.getElementById('manuscript-blocks-list');
 	if (streamContainer === null || activeDocument === null) {
 		return;
@@ -634,7 +691,12 @@ function renderManuscriptBlocksStream(activeDocument) {
 	}
 	refreshCharacterDatalist(activeDocument);
 	synchronizePrintPreviewNodes(activeDocument);
-	window.requestAnimationFrame(adjustAllVisibleTextareas);
+	window.requestAnimationFrame(function onFrameRendered() {
+		adjustAllVisibleTextareas();
+		if (focusBlockIdentifier) {
+			focusPrimaryInputInsideBlock(focusBlockIdentifier, focusSegmentIdentifier);
+		}
+	});
 }
 
 function populateEditorFieldsFromActiveDocument() {
@@ -651,7 +713,7 @@ function populateEditorFieldsFromActiveDocument() {
 	document.getElementById('setting-theend-checkbox').checked = Boolean(activeDocument.includeTheEnd);
 
 	const saveBadge = document.getElementById('save-status-text');
-	saveBadge.textContent = 'Gespeichert: ' + formatIsoTimestampReadable(activeDocument.modificationTimestamp);
+	saveBadge.textContent = 'Gespeichert • ' + formatIsoTimestampReadable(activeDocument.modificationTimestamp);
 
 	renderManuscriptBlocksStream(activeDocument);
 }
@@ -705,20 +767,24 @@ function bindDashboardEvents() {
 	const sortLabelText = document.getElementById('sort-direction-label-text');
 	const gridList = document.getElementById('documents-grid-list');
 	const dismissOnboardingButton = document.getElementById('dismiss-onboarding-guide-button');
+	const closeOnboardingButton = document.getElementById('close-onboarding-guide-button');
 	const showOnboardingButton = document.getElementById('show-onboarding-guide-button');
+	const guideModalDialog = document.getElementById('onboarding-guide-modal');
 	const backupMenuToggle = document.getElementById('toggle-backup-dropdown-button');
 	const backupDropdown = document.getElementById('backup-dropdown-menu');
 	const exportBackupButton = document.getElementById('export-all-backup-button');
 	const importBackupInput = document.getElementById('import-all-backup-input');
 
-	dismissOnboardingButton.addEventListener('click', function onDismissGuide() {
-		updateOnboardingVisibility(true);
-	});
+	dismissOnboardingButton.addEventListener('click', closeOnboardingGuideModalAndRemember);
+	closeOnboardingButton.addEventListener('click', closeOnboardingGuideModalAndRemember);
 
 	showOnboardingButton.addEventListener('click', function onShowGuide() {
-		updateOnboardingVisibility(false);
-		if (applicationState.activeDocumentIdentifier !== null) {
-			switchActiveWorkspaceScreen('dashboard');
+		openOnboardingGuideModal();
+	});
+
+	guideModalDialog.addEventListener('click', function onGuideBackdropClick(eventObject) {
+		if (eventObject.target === guideModalDialog) {
+			closeOnboardingGuideModalAndRemember();
 		}
 	});
 
@@ -755,9 +821,9 @@ function bindDashboardEvents() {
 	exportBackupButton.addEventListener('click', function onExportBackup() {
 		executeSafely(function downloadAllJson() {
 			const payload = JSON.stringify(applicationState.documents, null, '\t');
-			triggerBrowserFileDownload('scriptbridge-backup.json', payload, 'application/json');
+			triggerBrowserFileDownload('scriptbridge-sammlung.json', payload, 'application/json');
 			backupDropdown.classList.add('is-hidden');
-			showToastNotification('Kurs-Backup heruntergeladen.');
+			showToastNotification('Sammlung als Backup gespeichert.');
 		});
 	});
 
@@ -771,16 +837,16 @@ function bindDashboardEvents() {
 			executeSafely(function restoreBackupList() {
 				const importedList = JSON.parse(String(loadEvent.target.result));
 				if (!Array.isArray(importedList)) {
-					throw new Error('Ungueltiges Backup-Format.');
+					throw new Error('Ungültiges Backup-Format.');
 				}
-				for (const item of importedList) {
-					validateScreenplayDocument(item);
+				for (const documentItem of importedList) {
+					validateScreenplayDocument(documentItem);
 				}
 				applicationState.documents = importedList;
 				saveDocumentsToStorage(applicationState.documents);
 				backupDropdown.classList.add('is-hidden');
 				renderDashboardDocumentGrid();
-				showToastNotification('Backup erfolgreich geladen.');
+				showToastNotification('Sammlung erfolgreich geladen.');
 			});
 		};
 		reader.readAsText(chosenFile);
@@ -795,6 +861,13 @@ function bindDashboardEvents() {
 			const actionCommand = actionElement.getAttribute('data-dashboard-action');
 			const documentIdentifier = actionElement.getAttribute('data-document-identifier');
 
+			if (actionCommand === 'clear-search') {
+				applicationState.searchQuery = '';
+				searchField.value = '';
+				renderDashboardDocumentGrid();
+				return;
+			}
+
 			if (actionCommand === 'toggle-card-menu') {
 				eventObject.stopPropagation();
 				applicationState.openCardMenuIdentifier = applicationState.openCardMenuIdentifier === documentIdentifier ? null : documentIdentifier;
@@ -805,10 +878,10 @@ function bindDashboardEvents() {
 			applicationState.openCardMenuIdentifier = null;
 
 			if (actionCommand === 'create-new') {
-				const newDoc = createBlankScreenplayDocument();
-				applicationState.documents.push(newDoc);
-				applicationState.activeDocumentIdentifier = newDoc.identifier;
-				saveAndTouchActiveDocument(newDoc);
+				const newDocumentRecord = createBlankScreenplayDocument();
+				applicationState.documents.push(newDocumentRecord);
+				applicationState.activeDocumentIdentifier = newDocumentRecord.identifier;
+				saveAndTouchActiveDocument(newDocumentRecord);
 				switchActiveWorkspaceScreen('editor');
 				return;
 			}
@@ -820,31 +893,31 @@ function bindDashboardEvents() {
 			}
 
 			if (actionCommand === 'duplicate-document' && documentIdentifier) {
-				const originalDoc = applicationState.documents.find(function findDoc(item) {
+				const originalDocumentRecord = applicationState.documents.find(function findDocument(item) {
 					return item.identifier === documentIdentifier;
 				});
-				if (originalDoc) {
+				if (originalDocumentRecord) {
 					const timestampNow = createCurrentIsoTimestamp();
-					const copyDoc = JSON.parse(JSON.stringify(originalDoc));
-					copyDoc.identifier = generateUniqueIdentifier();
-					copyDoc.title = (originalDoc.title || 'Drehbuch') + ' (Kopie)';
-					copyDoc.creationTimestamp = timestampNow;
-					copyDoc.modificationTimestamp = timestampNow;
-					applicationState.documents.push(copyDoc);
+					const duplicatedDocumentRecord = JSON.parse(JSON.stringify(originalDocumentRecord));
+					duplicatedDocumentRecord.identifier = generateUniqueIdentifier();
+					duplicatedDocumentRecord.title = (originalDocumentRecord.title || 'Drehbuch') + ' (Kopie)';
+					duplicatedDocumentRecord.creationTimestamp = timestampNow;
+					duplicatedDocumentRecord.modificationTimestamp = timestampNow;
+					applicationState.documents.push(duplicatedDocumentRecord);
 					saveDocumentsToStorage(applicationState.documents);
 					renderDashboardDocumentGrid();
-					showToastNotification('Drehbuch dupliziert.');
+					showToastNotification('Kopie wurde angelegt.');
 				}
 				return;
 			}
 
 			if (actionCommand === 'export-single-tex' && documentIdentifier) {
-				const targetDoc = applicationState.documents.find(function findDoc(item) {
+				const targetDocumentRecord = applicationState.documents.find(function findDocument(item) {
 					return item.identifier === documentIdentifier;
 				});
-				if (targetDoc) {
-					const compiledTex = compileScreenplayDocumentToLatex(targetDoc);
-					triggerBrowserFileDownload((targetDoc.title || 'screenplay') + '.tex', compiledTex, 'text/x-tex');
+				if (targetDocumentRecord) {
+					const compiledTex = compileScreenplayDocumentToLatex(targetDocumentRecord);
+					triggerBrowserFileDownload((targetDocumentRecord.title || 'screenplay') + '.tex', compiledTex, 'text/x-tex');
 					renderDashboardDocumentGrid();
 					showToastNotification('.tex-Datei gespeichert.');
 				}
@@ -910,6 +983,69 @@ function bindEditorEvents() {
 	fadeoutCheckbox.addEventListener('change', persistHeaderMetadata);
 	theendCheckbox.addEventListener('change', persistHeaderMetadata);
 
+	titleField.addEventListener('keydown', function onTitleKeydown(eventObject) {
+		if (eventObject.key === 'Enter') {
+			eventObject.preventDefault();
+			authorField.focus();
+		}
+	});
+
+	authorField.addEventListener('keydown', function onAuthorKeydown(eventObject) {
+		if (eventObject.key === 'Enter') {
+			eventObject.preventDefault();
+			const activeDocument = getActiveDocument();
+			if (activeDocument && activeDocument.blocks.length > 0) {
+				focusPrimaryInputInsideBlock(activeDocument.blocks[0].identifier);
+			}
+		}
+	});
+
+	blocksStream.addEventListener('keydown', function onBlockStreamKeydown(eventObject) {
+		if (eventObject.key !== 'Enter') {
+			return;
+		}
+		const targetElement = eventObject.target;
+		const blockNode = targetElement.closest('[data-block-identifier]');
+		if (blockNode === null) {
+			return;
+		}
+		if (targetElement.classList.contains('slugline-location-field')) {
+			eventObject.preventDefault();
+			const timeInput = blockNode.querySelector('.slugline-time-field');
+			if (timeInput !== null) {
+				timeInput.focus();
+			}
+			return;
+		}
+		if (targetElement.classList.contains('dialogue-character-field')) {
+			eventObject.preventDefault();
+			const firstSegmentTextarea = blockNode.querySelector('.auto-expanding-textarea');
+			if (firstSegmentTextarea !== null) {
+				firstSegmentTextarea.focus();
+			}
+			return;
+		}
+		if (targetElement.classList.contains('slugline-time-field')) {
+			eventObject.preventDefault();
+			const activeDocument = getActiveDocument();
+			if (activeDocument === null) {
+				return;
+			}
+			const blockIdentifier = blockNode.getAttribute('data-block-identifier');
+			const currentBlockIndex = activeDocument.blocks.findIndex(function findBlockIndex(item) {
+				return item.identifier === blockIdentifier;
+			});
+			if (currentBlockIndex !== -1 && currentBlockIndex + 1 < activeDocument.blocks.length) {
+				focusPrimaryInputInsideBlock(activeDocument.blocks[currentBlockIndex + 1].identifier);
+			} else if (currentBlockIndex !== -1) {
+				const newActionBlock = createEmptyBlockRecord('action');
+				activeDocument.blocks.push(newActionBlock);
+				saveAndTouchActiveDocument(activeDocument);
+				renderManuscriptBlocksStream(activeDocument, newActionBlock.identifier);
+			}
+		}
+	});
+
 	blocksStream.addEventListener('input', function onBlockFieldInput(eventObject) {
 		executeSafely(function updateBlockContent() {
 			if (eventObject.target.classList.contains('auto-expanding-textarea')) {
@@ -943,8 +1079,8 @@ function bindEditorEvents() {
 
 			const segmentIdentifier = eventObject.target.getAttribute('data-segment-identifier');
 			if (segmentIdentifier && Array.isArray(targetBlock.segments)) {
-				const targetSegment = targetBlock.segments.find(function findSegment(seg) {
-					return seg.identifier === segmentIdentifier;
+				const targetSegment = targetBlock.segments.find(function findSegment(segmentItem) {
+					return segmentItem.identifier === segmentIdentifier;
 				});
 				if (targetSegment) {
 					targetSegment.text = eventObject.target.value;
@@ -968,7 +1104,7 @@ function bindEditorEvents() {
 				return;
 			}
 			const blockIdentifier = blockNode.getAttribute('data-block-identifier');
-			const blockIndex = activeDocument.blocks.findIndex(function findIdx(item) {
+			const blockIndex = activeDocument.blocks.findIndex(function findBlockIndex(item) {
 				return item.identifier === blockIdentifier;
 			});
 			if (blockIndex === -1) {
@@ -979,7 +1115,7 @@ function bindEditorEvents() {
 				eventObject.target.value
 			);
 			saveAndTouchActiveDocument(activeDocument);
-			renderManuscriptBlocksStream(activeDocument);
+			renderManuscriptBlocksStream(activeDocument, blockIdentifier);
 		});
 	});
 
@@ -999,13 +1135,15 @@ function bindEditorEvents() {
 				return;
 			}
 			const blockIdentifier = blockNode.getAttribute('data-block-identifier');
-			const blockIndex = activeDocument.blocks.findIndex(function findIdx(item) {
+			const blockIndex = activeDocument.blocks.findIndex(function findBlockIndex(item) {
 				return item.identifier === blockIdentifier;
 			});
 			if (blockIndex === -1) {
 				return;
 			}
 			const currentBlock = activeDocument.blocks[blockIndex];
+			let focusTargetBlockIdentifier = currentBlock.identifier;
+			let focusTargetSegmentIdentifier = null;
 
 			if (commandName === 'move-up') {
 				activeDocument.blocks = moveArrayItem(activeDocument.blocks, blockIndex, blockIndex - 1);
@@ -1013,33 +1151,44 @@ function bindEditorEvents() {
 				activeDocument.blocks = moveArrayItem(activeDocument.blocks, blockIndex, blockIndex + 1);
 			} else if (commandName === 'insert-below') {
 				const nextLogicalType = currentBlock.type === 'scene_heading' ? 'action' : 'dialogue';
-				activeDocument.blocks.splice(blockIndex + 1, 0, createEmptyBlockRecord(nextLogicalType));
+				const insertedBlock = createEmptyBlockRecord(nextLogicalType);
+				activeDocument.blocks.splice(blockIndex + 1, 0, insertedBlock);
+				focusTargetBlockIdentifier = insertedBlock.identifier;
 			} else if (commandName === 'delete-block') {
 				activeDocument.blocks.splice(blockIndex, 1);
 				if (activeDocument.blocks.length === 0) {
-					activeDocument.blocks.push(createEmptyBlockRecord('scene_heading'));
+					const replacementBlock = createEmptyBlockRecord('scene_heading');
+					activeDocument.blocks.push(replacementBlock);
+					focusTargetBlockIdentifier = replacementBlock.identifier;
+				} else {
+					const fallbackIndex = Math.max(0, blockIndex - 1);
+					focusTargetBlockIdentifier = activeDocument.blocks[fallbackIndex].identifier;
 				}
 			} else if (commandName === 'add-parenthetical' && Array.isArray(currentBlock.segments)) {
-				currentBlock.segments.push({
+				const newSegment = {
 					identifier: generateUniqueIdentifier(),
 					segmentType: 'parenthetical',
 					text: ''
-				});
+				};
+				currentBlock.segments.push(newSegment);
+				focusTargetSegmentIdentifier = newSegment.identifier;
 			} else if (commandName === 'add-speech' && Array.isArray(currentBlock.segments)) {
-				currentBlock.segments.push({
+				const newSegment = {
 					identifier: generateUniqueIdentifier(),
 					segmentType: 'speech',
 					text: ''
-				});
+				};
+				currentBlock.segments.push(newSegment);
+				focusTargetSegmentIdentifier = newSegment.identifier;
 			} else if (commandName === 'delete-segment' && Array.isArray(currentBlock.segments)) {
 				const segmentIdentifier = commandButton.getAttribute('data-segment-identifier');
-				currentBlock.segments = currentBlock.segments.filter(function keepOther(seg) {
-					return seg.identifier !== segmentIdentifier;
+				currentBlock.segments = currentBlock.segments.filter(function keepOther(segmentItem) {
+					return segmentItem.identifier !== segmentIdentifier;
 				});
 			}
 
 			saveAndTouchActiveDocument(activeDocument);
-			renderManuscriptBlocksStream(activeDocument);
+			renderManuscriptBlocksStream(activeDocument, focusTargetBlockIdentifier, focusTargetSegmentIdentifier);
 		});
 	});
 
@@ -1052,9 +1201,10 @@ function bindEditorEvents() {
 					return;
 				}
 				const blockType = appendButton.getAttribute('data-append-block-type');
-				activeDocument.blocks.push(createEmptyBlockRecord(blockType));
+				const createdBlock = createEmptyBlockRecord(blockType);
+				activeDocument.blocks.push(createdBlock);
 				saveAndTouchActiveDocument(activeDocument);
-				renderManuscriptBlocksStream(activeDocument);
+				renderManuscriptBlocksStream(activeDocument, createdBlock.identifier);
 			});
 		});
 	}
@@ -1075,7 +1225,6 @@ function bindTopBarAndImportEvents() {
 	const copyPromptButton = document.getElementById('copy-ai-prompt-template-button');
 	const importTextarea = document.getElementById('import-raw-source-textarea');
 	const replaceBlocksCheckbox = document.getElementById('replace-existing-blocks-checkbox');
-	const cycleThemeButton = document.getElementById('cycle-theme-mode-button');
 
 	overleafButton.addEventListener('click', function onSendToOverleaf() {
 		executeSafely(function postToOverleaf() {
@@ -1085,7 +1234,7 @@ function bindTopBarAndImportEvents() {
 			}
 			const latexCode = compileScreenplayDocumentToLatex(activeDocument);
 			submitScreenplayToOverleaf(activeDocument.title, latexCode);
-			showToastNotification('Wird in Overleaf geöffnet...');
+			showToastNotification('Drehbuch wird in Overleaf geöffnet...');
 		});
 	});
 
@@ -1115,7 +1264,7 @@ function bindTopBarAndImportEvents() {
 			const latexCode = compileScreenplayDocumentToLatex(activeDocument);
 			navigator.clipboard.writeText(latexCode);
 			exportDropdownMenu.classList.add('is-hidden');
-			showToastNotification('LaTeX-Code kopiert.');
+			showToastNotification('LaTeX-Code in die Zwischenablage kopiert.');
 		});
 	});
 
@@ -1136,6 +1285,7 @@ function bindTopBarAndImportEvents() {
 		importTextarea.value = '';
 		replaceBlocksCheckbox.checked = false;
 		importModalDialog.showModal();
+		importTextarea.focus();
 	});
 
 	function closeImportModal() {
@@ -1145,10 +1295,16 @@ function bindTopBarAndImportEvents() {
 	closeImportModalButton.addEventListener('click', closeImportModal);
 	cancelImportModalButton.addEventListener('click', closeImportModal);
 
+	importModalDialog.addEventListener('click', function onImportBackdropClick(eventObject) {
+		if (eventObject.target === importModalDialog) {
+			closeImportModal();
+		}
+	});
+
 	copyPromptButton.addEventListener('click', function onCopyAiPrompt() {
 		executeSafely(function copyPrompt() {
 			navigator.clipboard.writeText(buildPromptTemplateForArtificialIntelligence());
-			showToastNotification('KI-Anweisung in die Zwischenablage kopiert.');
+			showToastNotification('KI-Vorlage kopiert.');
 		});
 	});
 
@@ -1191,21 +1347,8 @@ function bindTopBarAndImportEvents() {
 			saveAndTouchActiveDocument(activeDocument);
 			populateEditorFieldsFromActiveDocument();
 			closeImportModal();
-			showToastNotification(String(importResult.blocks.length) + ' Bausteine importiert.');
+			showToastNotification(String(importResult.blocks.length) + ' Abschnitte eingefügt.');
 		});
-	});
-
-	cycleThemeButton.addEventListener('click', function onCycleTheme() {
-		const themeCycle = ['system', 'light', 'dark'];
-		const nextIndex = (themeCycle.indexOf(applicationState.themeMode) + 1) % themeCycle.length;
-		const nextTheme = themeCycle[nextIndex];
-		applyThemePreference(nextTheme);
-		const labelMap = {
-			system: 'Darstellung: System',
-			light: 'Darstellung: Hell',
-			dark: 'Darstellung: Dunkel'
-		};
-		showToastNotification(labelMap[nextTheme]);
 	});
 
 	document.addEventListener('click', function onGlobalDocumentClick() {
@@ -1228,12 +1371,14 @@ function initializeApplication() {
 	executeSafely(function startApplication() {
 		hydrateStaticIconsAndIllustrations();
 		applicationState.documents = loadDocumentsFromStorage();
-		applyThemePreference(loadThemeFromStorage());
-		updateOnboardingVisibility(loadOnboardingHiddenFlag());
+		applicationState.isOnboardingHidden = loadOnboardingHiddenFlag();
 		bindDashboardEvents();
 		bindEditorEvents();
 		bindTopBarAndImportEvents();
 		switchActiveWorkspaceScreen('dashboard');
+		if (!applicationState.isOnboardingHidden) {
+			openOnboardingGuideModal();
+		}
 	});
 }
 
