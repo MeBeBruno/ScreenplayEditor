@@ -12,7 +12,7 @@
 
 	<header class='top-navigation-bar no-print' role='banner'>
 		<div class='navigation-left-group'>
-			<button type='button' id='return-to-dashboard-button' class='button-ghost is-hidden' aria-label='Zurück zur Dokumentenübersicht'>
+			<button type='button' id='return-to-dashboard-button' class='button-ghost is-hidden'>
 				<span data-icon-name='arrowLeft' class='icon-slot'></span>
 				<span>Alle Drehbücher</span>
 			</button>
@@ -22,13 +22,13 @@
 				</span>
 				<span class='brand-name'>Drehbuch Editor</span>
 			</div>
-			<span id='save-status-text' class='save-status-pill is-hidden' role='status' aria-live='polite'></span>
+			<span id='save-status-text' class='save-status-pill is-hidden' role='status'></span>
 		</div>
 
 		<div class='navigation-right-group'>
-			<button type='button' id='show-onboarding-guide-button' class='button-ghost' aria-label='Kurzanleitung als Popup öffnen'>
+			<button type='button' id='show-onboarding-guide-button' class='button-ghost'>
 				<span data-icon-name='helpCircle' class='icon-slot'></span>
-				<span class='hide-on-small-mobile'>Anleitung</span>
+				<span class='hide-on-small-mobile'>Hilfe</span>
 			</button>
 
 			<div id='editor-header-toolbar' class='editor-toolbar-actions is-hidden'>
@@ -47,7 +47,7 @@
 						<span>In Overleaf öffnen</span>
 						<span data-icon-name='externalLink' class='icon-slot'></span>
 					</button>
-					<button type='button' id='toggle-export-dropdown-button' class='button-primary split-toggle-part' aria-haspopup='true' aria-expanded='false' aria-label='Weitere Exportformate öffnen'>
+					<button type='button' id='toggle-export-dropdown-button' class='button-primary split-toggle-part'>
 						<span data-icon-name='chevronDown' class='icon-slot'></span>
 					</button>
 					<div id='export-options-dropdown' class='floating-dropdown-menu is-hidden' role='menu'>
@@ -66,7 +66,7 @@
 	</header>
 
 	<main id='main-workspace' class='workspace-shell' tabindex='-1'>
-		<section id='dashboard-view-container' class='dashboard-view no-print' aria-label='Drehbuch-Übersicht'>
+		<section id='dashboard-view-container' class='dashboard-view no-print'>
 			<div class='dashboard-welcome-header'>
 				<div class='dashboard-welcome-text'>
 					<h1 class='dashboard-heading'>Deine Drehbücher</h1>
@@ -76,7 +76,7 @@
 				<div class='dashboard-controls-bar'>
 					<div class='search-input-wrapper'>
 						<span data-icon-name='search' class='icon-slot search-field-icon'></span>
-						<input type='search' id='dashboard-search-field' class='input-control search-field-input' placeholder='Nach Titel oder Person suchen...' aria-label='Drehbücher durchsuchen'>
+						<input type='search' id='dashboard-search-field' class='input-control search-field-input' placeholder='Nach Titel oder Person suchen...'>
 					</div>
 
 					<div class='sorting-controls-group'>
@@ -87,13 +87,13 @@
 							<option value='title'>Alphabetisch</option>
 						</select>
 
-						<button type='button' id='dashboard-sort-direction-button' class='button-secondary' aria-label='Sortierreihenfolge umkehren'>
+						<button type='button' id='dashboard-sort-direction-button' class='button-secondary'>
 							<span data-icon-name='sortDescending' id='sort-direction-icon-slot' class='icon-slot'></span>
 							<span id='sort-direction-label-text' class='hide-on-small-mobile'>Absteigend</span>
 						</button>
 
 						<div class='relative-dropdown-anchor'>
-							<button type='button' id='toggle-backup-dropdown-button' class='button-icon-square' aria-haspopup='true' aria-expanded='false' aria-label='Sicherung verwalten' title='Alle Drehbücher sichern oder laden'>
+							<button type='button' id='toggle-backup-dropdown-button' class='button-icon-square' title='Alle Drehbücher sichern oder laden'>
 								<span data-icon-name='moreHorizontal' class='icon-slot'></span>
 							</button>
 							<div id='backup-dropdown-menu' class='floating-dropdown-menu is-hidden' role='menu'>
@@ -112,10 +112,10 @@
 				</div>
 			</div>
 
-			<div id='documents-grid-list' class='documents-grid-layout' role='list' aria-label='Gespeicherte Drehbücher'></div>
+			<div id='documents-grid-list' class='documents-grid-layout' role='list'></div>
 		</section>
 
-		<section id='editor-view-container' class='editor-view is-hidden' aria-label='Drehbuch-Manuskript'>
+		<section id='editor-view-container' class='editor-view is-hidden'>
 			<div id='printable-cover-page' class='print-only-cover-page'>
 				<div class='print-cover-center'>
 					<h1 id='print-cover-title' class='print-title-heading'></h1>
@@ -127,12 +127,12 @@
 
 			<div class='screenplay-page-sheet'>
 				<header class='manuscript-header-zone no-print'>
-					<input type='text' id='editor-title-field' class='manuscript-title-field' placeholder='Titel deines Drehbuchs' aria-label='Titel des Drehbuchs'>
+					<input type='text' id='editor-title-field' class='manuscript-title-field' placeholder='Titel deines Drehbuchs'>
 
 					<div class='manuscript-byline-row'>
 						<span class='byline-word'>geschrieben von</span>
-						<input type='text' id='editor-author-field' class='manuscript-author-field' placeholder='Dein Name' aria-label='Autorin oder Autor'>
-						<button type='button' id='toggle-cover-settings-button' class='button-subtle-link' aria-expanded='false' aria-controls='cover-settings-panel'>
+						<input type='text' id='editor-author-field' class='manuscript-author-field' placeholder='Dein Name'>
+						<button type='button' id='toggle-cover-settings-button' class='button-subtle-link'>
 							<span data-icon-name='sliders' class='icon-slot'></span>
 							<span>Deckblatt &amp; Extras</span>
 						</button>
@@ -167,12 +167,12 @@
 
 				<div id='fade-in-print-marker' class='manuscript-static-marker'>AUFBLENDE:</div>
 
-				<div id='manuscript-blocks-list' class='manuscript-blocks-stream' role='list' aria-label='Drehbuch-Bausteine'></div>
+				<div id='manuscript-blocks-list' class='manuscript-blocks-stream' role='list'></div>
 
 				<div id='fade-out-print-marker' class='manuscript-static-marker marker-right'>ABBLENDE.</div>
 				<div id='the-end-print-marker' class='manuscript-static-marker marker-center'>ENDE</div>
 
-				<footer class='manuscript-bottom-toolbar no-print' role='toolbar' aria-label='Neuen Baustein am Ende einfügen'>
+				<footer class='manuscript-bottom-toolbar no-print' role='toolbar'>
 					<span class='toolbar-caption'>Neuen Abschnitt anfügen:</span>
 					<button type='button' class='button-pill-add pill-add-scene' data-append-block-type='scene_heading'>
 						<span data-icon-name='plus' class='icon-slot'></span>
@@ -195,14 +195,14 @@
 		</section>
 	</main>
 
-	<!--- <dialog id='onboarding-guide-modal' class='modal-overlay-dialog guide-modal-dialog no-print' aria-labelledby='onboarding-heading'>
+	<dialog id='onboarding-guide-modal' class='modal-overlay-dialog guide-modal-dialog no-print'>
 		<div class='modal-card-surface guide-modal-surface'>
 			<div class='onboarding-header-bar'>
 				<div class='onboarding-title-group'>
-					<span class='onboarding-eyebrow'>Kurzanleitung</span>
-					<h2 id='onboarding-heading' class='onboarding-main-title'>So entsteht dein Drehbuch in 3 einfachen Schritten</h2>
+					<span class='onboarding-eyebrow'>Hilfe</span>
+					<h2 id='onboarding-heading' class='onboarding-main-title'>So geht’s:</h2>
 				</div>
-				<button type='button' id='close-onboarding-guide-button' class='button-icon-square' aria-label='Anleitung schließen'>
+				<button type='button' id='close-onboarding-guide-button' class='button-icon-square'>
 					<span data-icon-name='close' class='icon-slot'></span>
 				</button>
 			</div>
@@ -215,8 +215,8 @@
 					</figure>
 					<div class='onboarding-step-body'>
 						<span class='step-number-badge badge-pastel-peach'>Schritt 1</span>
-						<h3 class='onboarding-step-title'>Drauflosschreiben oder KI-Text einfügen</h3>
-						<p class='onboarding-step-text'>Tippe deine Geschichte direkt auf das warme Manuskriptblatt oder kopiere fertige Szenen aus deinem KI-Chat über den Button „Text / KI-Szene einfügen“ direkt ins Dokument.</p>
+						<h3 class='onboarding-step-title'>Drauflosschreiben oder <img src="https://upload.wikimedia.org/wikipedia/commons/9/92/LaTeX_logo.svg" alt="LaTeX" height="1em"> einfügen</h3>
+						<p class='onboarding-step-text'>Tippe deine Geschichte direkt auf das warme Manuskriptblatt oder füge fertige Szenen über den Button „Text / KI-Szene einfügen“ direkt ins Dokument.</p>
 					</div>
 				</article>
 
@@ -252,13 +252,13 @@
 				</button>
 			</div>
 		</div>
-	</dialog> -->
+	</dialog>
 
-	<dialog id='import-script-modal' class='modal-overlay-dialog no-print' aria-labelledby='import-modal-title'>
+	<dialog id='import-script-modal' class='modal-overlay-dialog no-print'>
 		<div class='modal-card-surface'>
 			<div class='modal-header-row'>
 				<h2 id='import-modal-title' class='modal-heading-text'>Szene oder Skript-Text einfügen</h2>
-				<button type='button' id='close-import-modal-button' class='button-icon-square' aria-label='Fenster schließen'>
+				<button type='button' id='close-import-modal-button' class='button-icon-square'>
 					<span data-icon-name='close' class='icon-slot'></span>
 				</button>
 			</div>
@@ -274,7 +274,7 @@
 				</button>
 			</div>
 
-			<textarea id='import-raw-source-textarea' class='textarea-control import-source-textarea' rows='9' placeholder='INNEN CAFÉ AM MORGEN - TAG&#10;&#10;LINA rührt gedankenverloren in ihrem Kakao...&#10;&#10;LINA (leise)&#10;Glaubst du, sie haben uns bemerkt?' aria-label='Einzufügender Drehbuch- oder LaTeX-Text'></textarea>
+			<textarea id='import-raw-source-textarea' class='textarea-control import-source-textarea' rows='9' placeholder='INNEN CAFÉ AM MORGEN - TAG&#10;&#10;LINA rührt gedankenverloren in ihrem Kakao...&#10;&#10;LINA (leise)&#10;Glaubst du, sie haben uns bemerkt?'></textarea>
 
 			<div class='modal-footer-actions'>
 				<label class='checkbox-option-label'>
@@ -308,7 +308,7 @@
 		<textarea name='snip' id='overleaf-snip-code'></textarea>
 	</form>
 
-	<div id='toast-notifications-region' class='toast-stack-region no-print' role='status' aria-live='polite'></div>
+	<div id='toast-notifications-region' class='toast-stack-region no-print' role='status'></div>
 
 	<script type='module' src='./scripts/application-controller.js'></script>
 </body>
