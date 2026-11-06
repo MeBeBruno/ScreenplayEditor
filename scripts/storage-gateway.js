@@ -5,45 +5,25 @@ const STORAGE_DOCUMENTS_KEY = 'scriptbridge_documents_v3';
 const STORAGE_THEME_KEY = 'scriptbridge_theme_v3';
 const STORAGE_ONBOARDING_HIDDEN_KEY = 'scriptbridge_onboarding_hidden_v3';
 
-const APRIL_RIDER_DEMO_LATEX = [
-	'\\documentclass{screenplay}[2012/06/30]',
-	'\\title{Für ein paar Tage mehr}',
-	'\\author{April Rider}',
-	'\\address{Musterstraße 12\\\\10115 Berlin\\\\Projektkurs Film}',
+const DEMO_LATEX = [
+	'\\documentclass{screenplay}',
+	'\\title{Demo-Play}',
+	'\\author{MeBeBruno}',
+	'\\address{github.com/MeBeBruno}',
 	'\\begin{document}',
 	'\\coverpage',
 	'\\fadein',
-	'\\intslug[TAG]{Seminarraum im Grand Hotel}',
-	'JOE und APRIL stürmen durch die Flügeltüren in einen hell erleuchteten Seminarraum.',
-	'\\begin{dialogue}{Joe}',
-	'Sind wir noch rechtzeitig?',
+	'\\intslug[TAG]{Farbiger Raum}',
+	'DEH und MOH treten ein.',
+	'\\begin{dialogue}{DEH}',
+	'Haben wir die Action schon verpasst?',
 	'\\end{dialogue}',
-	'\\begin{dialogue}{April}',
-	'Wie könnten sie ohne uns anfangen? Wir sind die Hauptattraktion.',
+	'\\begin{dialogue}{MOH}',
+	'Niemals, die muss doch erst einmal geschrieben werden!',
 	'\\end{dialogue}',
-	'Joe schnauft durch und lehnt sich vorne im Raum an das Rednerpult.',
-	'\\begin{dialogue}[blickt sich im Raum um]{Joe}',
-	'Sind wir das?',
-	'\\end{dialogue}',
-	'\\begin{dialogue}{April}',
-	'Stell dich nicht so an. Du weißt genau, dass wir eingeladen wurden, um über das Drehbuchformat zu sprechen.',
-	'\\end{dialogue}',
-	'\\begin{dialogue}{Joe}',
-	'Aber warum ist der Saal dann komplett leer?',
-	'\\end{dialogue}',
-	'April und Joe blicken beide durch den Raum~-- endlose Reihen leerer Stühle und weit und breit kein Mensch zu sehen.',
-	'\\begin{dialogue}{April}',
-	'Okay, ganz ruhig, keine Panik.',
-	'\\end{dialogue}',
-	'Sie atmet dreimal tief durch. Dann schaut sie auf ihre Armbanduhr und lächelt.',
-	'\\begin{dialogue}[fährt fort]{April}',
-	'Wir sind eine Stunde zu früh.\\dots Wir sollten proben.',
-	'\\end{dialogue}',
-	'\\begin{dialogue}{Joe}',
-	'Alles klar, fang du an. Seitenränder?',
-	'\\end{dialogue}',
-	'\\begin{dialogue}{April}',
-	'Links anderthalb Zoll. Rechts ein Zoll. Oben ein Zoll bis zum Textkörper, ein halber Zoll bis zur Seitenzahl. Unten ein halber bis anderthalb Zoll, je nachdem, wo der Seitenumbruch landet.',
+	'DEH blickt sich um und erblickt die leeren Seiten des Skriptes.',
+	'\\begin{dialogue}[sieht wieder zu MOH]{DEH}',
+	'Ich bin gespannt was hier passieren wird\\dots',
 	'\\end{dialogue}',
 	'\\end{document}'
 ].join('\n');
@@ -114,12 +94,12 @@ export function createEmptyBlockRecord(blockType) {
 
 export function createDemoScreenplayDocument() {
 	const timestampNow = createCurrentIsoTimestamp();
-	const parsedDemo = parseLatexScreenplaySource(APRIL_RIDER_DEMO_LATEX, generateUniqueIdentifier);
+	const parsedDemo = parseLatexScreenplaySource(DEMO_LATEX, generateUniqueIdentifier);
 	return {
 		identifier: generateUniqueIdentifier(),
-		title: parsedDemo.metadataPatch.title || 'Für ein paar Tage mehr',
-		author: parsedDemo.metadataPatch.author || 'April Rider',
-		address: parsedDemo.metadataPatch.address || 'Musterstraße 12\n10115 Berlin\nProjektkurs Film',
+		title: parsedDemo.metadataPatch.title || 'Demo-Play',
+		author: parsedDemo.metadataPatch.author || 'MeBeBruno',
+		address: parsedDemo.metadataPatch.address || 'github.com/MeBeBruno',
 		creationTimestamp: timestampNow,
 		modificationTimestamp: timestampNow,
 		includeTitlePage: true,
@@ -131,10 +111,12 @@ export function createDemoScreenplayDocument() {
 }
 
 export function createBlankScreenplayDocument() {
+	const untitledTitles = ['Hier steht mal ein toller Titel', 'Bli Bla Blub!', '🧙🔫💘👁️😔', 'Mein neues Drehbuch', 'Mein tolles Drehbuch', 'Mein Drehbuch', 'Hier hast du dein Drehbuch'];
 	const timestampNow = createCurrentIsoTimestamp();
+	let randomTitleIndex = Math.floor(Math.random() * untitledTitles.length);
 	return {
 		identifier: generateUniqueIdentifier(),
-		title: 'Unbetiteltes Drehbuch',
+		title: untitledTitles[randomTitleIndex],
 		author: '',
 		address: '',
 		creationTimestamp: timestampNow,
