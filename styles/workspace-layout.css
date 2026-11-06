@@ -53,6 +53,25 @@ body {
 	fill: none;
 }
 
+.inline-wordmark-logo {
+	display: inline-block;
+	width: auto;
+	height: calc(var(--font-size-base) * 1.05);
+	vertical-align: -0.1875rem;
+	margin-inline: 0.0625rem;
+	color: inherit;
+	fill: currentColor;
+	stroke: none;
+	overflow: visible;
+}
+
+.inline-wordmark-logo path,
+.inline-wordmark-logo polygon,
+.inline-wordmark-logo g {
+	fill: currentColor !important;
+	stroke: none !important;
+}
+
 .skip-link {
 	position: absolute;
 	top: -8rem;
