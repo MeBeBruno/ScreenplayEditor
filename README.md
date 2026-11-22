@@ -1,4 +1,4 @@
-# Screenplay Editor&#x24B7;
+# Screenplay Editor<sup>Ⓑ</sup>
 
 AI Label: B-[{C}](https://mebebruno.github.io/BrunosAILabelSystem/explain.html?code)
 
